@@ -1,0 +1,19 @@
+FROM python:3.8
+
+WORKDIR /home/pymongoose
+COPY ./pymongoose ./pymongoose
+
+#python requirements for testing
+COPY ./requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./test.sh .
+
+#pymongoose
+COPY ./path.sh .
+RUN /bin/bash path.sh
+
+COPY ./tests ./tests
+
+
+CMD ["/bin/bash"]
