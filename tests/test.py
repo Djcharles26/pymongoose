@@ -54,14 +54,14 @@ def test_insert():
     try:
         userA = User(
             name="TestA",
-            password="test",
+            username="test",
             role=role_id
         )
 
 
         userB = User(
             name="TestB",
-            password="test",
+            username="test",
             role=role_id
         )
 
@@ -122,7 +122,7 @@ def test_update():
     try:
         count = User.update({}, {
             "$set": {
-                "password": "-test-"
+                "username": "-test-"
             }
         }, many=True)
 

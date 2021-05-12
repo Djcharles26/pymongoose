@@ -13,7 +13,7 @@ def user_model_init (db):
 class User(Schema):
     id = None
     name = None
-    password = None
+    username = None
     role = None
 
     def __init__(self, **kwargs):
@@ -22,7 +22,7 @@ class User(Schema):
                 "type": Types.String,
                 "required": True
             },
-            "password": {
+            "username": {
                 "type": Types.String,
                 "required": True
             },
@@ -35,26 +35,26 @@ class User(Schema):
         if not "empty" in kwargs:
             self.id = ObjectId()
             self.name = super().get_default_value("name", kwargs)
-            self.password = super().get_default_value("password", kwargs)
+            self.username = super().get_default_value("username", kwargs)
             self.role = super().get_default_value("role", kwargs)
 
         self.iat = 0
         self.items_count = 0
 
     def __str__(self):
-        return f"User: {self.name}, Password: {self.password}"
+        return f"User: {self.name}, Password: {self.username}"
 
     def fromJson(self, json_obj):
         self.id = super().extract("_id", json_obj)
         self.name = super().extract("name", json_obj)
-        self.password = super().extract("password", json_obj)
+        self.username = super().extract("username", json_obj)
         self.role = super().extract("role", json_obj)
         
 
     def toJson(self, full = True):
         json_obj =  {
             "name": self.name,
-            "password": self.password,
+            "username": self.username,
             "role": self.role
         }
         if full:
