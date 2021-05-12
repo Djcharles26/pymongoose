@@ -1,3 +1,4 @@
 pymongo
 pymongo[srv]
 pytest
+sdist

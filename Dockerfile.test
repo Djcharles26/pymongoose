@@ -1,19 +1,18 @@
 FROM python:3.8
 
 WORKDIR /home/pymongoose
-COPY ./pymongoose ./pymongoose
+COPY . .
 
 #python requirements for testing
-COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./test.sh .
-
 #pymongoose
-COPY ./path.sh .
-RUN /bin/bash path.sh
+RUN python -m pip install --upgrade pip
+RUN pip install pytest pymongo pymongo[srv]
 
-COPY ./tests ./tests
+#Install packages
+RUN python setup.py sdist
+RUN pip install dist/pymongoose-*
 
 
 CMD ["/bin/bash"]

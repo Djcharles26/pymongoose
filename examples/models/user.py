@@ -13,7 +13,7 @@ def user_model_init (db):
 class User(Schema):
     id = None
     name = None
-    username = None
+    password = None
     role = None
 
     def __init__(self, **kwargs):
@@ -22,7 +22,7 @@ class User(Schema):
                 "type": Types.String,
                 "required": True
             },
-            "username": {
+            "password": {
                 "type": Types.String,
                 "required": True
             },
@@ -35,26 +35,26 @@ class User(Schema):
         if not "empty" in kwargs:
             self.id = ObjectId()
             self.name = super().get_default_value("name", kwargs)
-            self.username = super().get_default_value("username", kwargs)
+            self.password = super().get_default_value("password", kwargs)
             self.role = super().get_default_value("role", kwargs)
 
         self.iat = 0
         self.items_count = 0
 
     def __str__(self):
-        return f"User: {self.name}, Password: {self.username}"
+        return f"User: {self.name}, Password: {self.password}"
 
     def fromJson(self, json_obj):
         self.id = super().extract("_id", json_obj)
         self.name = super().extract("name", json_obj)
-        self.username = super().extract("username", json_obj)
+        self.password = super().extract("password", json_obj)
         self.role = super().extract("role", json_obj)
         
 
     def toJson(self, full = True):
         json_obj =  {
             "name": self.name,
-            "username": self.username,
+            "password": self.password,
             "role": self.role
         }
         if full:
@@ -70,8 +70,7 @@ class User(Schema):
             if id is not None:
                 json_obj["_id"] = id
 
-            retval = users.insert_one(json_obj)
-            self.id = retval.inserted_id
+            self.id = users.insert(json_obj)
         return self.id
 
     @staticmethod

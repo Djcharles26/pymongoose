@@ -1,0 +1,33 @@
+name: Pymongoose Tests
+
+on:
+  pull_request:
+    branches:
+      - "*"
+  
+jobs:
+  test:
+    name: Pymongoose tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          python-version: 3.8
+    
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pymongo pymongo[srv]
+
+      - name: Installing package
+        run: |
+          python setup.py sdist
+          pip install dist/pymongoose-*
+
+      - name: Pymongoose unit testing
+        env: 
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          bash test.sh
+

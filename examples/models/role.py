@@ -4,17 +4,16 @@ from pymongoose.mongo_types import Types, Schema, MongoException, MongoError
 from bson import json_util
 from bson.objectid import ObjectId
 
-users = None
+roles = None
 
-def user_model_init (db):
-   global users
-   users = db["users"]
+def role_model_init (db):
+   global roles
+   roles = db["roles"]
 
-class User(Schema):
+class Role(Schema):
     id = None
     name = None
-    username = None
-    role = None
+    action = None
 
     def __init__(self, **kwargs):
         self.schema = {
@@ -22,40 +21,33 @@ class User(Schema):
                 "type": Types.String,
                 "required": True
             },
-            "username": {
+            "action": {
                 "type": Types.String,
                 "required": True
-            },
-            "role" : {
-                "type": Types.ObjectId,
-                "ref": "roles"
             }
         }
 
         if not "empty" in kwargs:
             self.id = ObjectId()
             self.name = super().get_default_value("name", kwargs)
-            self.username = super().get_default_value("username", kwargs)
-            self.role = super().get_default_value("role", kwargs)
+            self.action = super().get_default_value("action", kwargs)
 
         self.iat = 0
         self.items_count = 0
 
     def __str__(self):
-        return f"User: {self.name}, Password: {self.username}"
+        return f"Role: {self.name}, Password: {self.action}"
 
     def fromJson(self, json_obj):
         self.id = super().extract("_id", json_obj)
         self.name = super().extract("name", json_obj)
-        self.username = super().extract("username", json_obj)
-        self.role = super().extract("role", json_obj)
+        self.action = super().extract("action", json_obj)
         
 
     def toJson(self, full = True):
         json_obj =  {
             "name": self.name,
-            "username": self.username,
-            "role": self.role
+            "action": self.action
         }
         if full:
             json_obj["id"] = self.id
@@ -70,47 +62,42 @@ class User(Schema):
             if id is not None:
                 json_obj["_id"] = id
 
-            retval = users.insert_one(json_obj)
-            self.id = retval.inserted_id
+            self.id = roles.insert(json_obj)
         return self.id
 
     @staticmethod
     def exists(query):
-        global users
-        retval = methods.exists(users, query)
+        global roles
+        retval = methods.exists(roles, query)
         return retval
     @staticmethod
     def find(query, select = None, populate=None, one=False):
-        global users
-        retval = methods.find(users, "users", query, select, populate, one)
+        global roles
+        retval = methods.find(roles, Role.schema, query, select, populate, one)
         if one:
-            if retval is not None:
-                retval = User.parse(retval)
-
+            retval = Role.parse(retval)
         return retval
 
     @staticmethod
-    def find_by_id(id, select = None, populate=None):
-        global users
-        retval = methods.find_by_id(users, "users", id, select, populate)
-        if retval is not None:
-            retval = User.parse(retval)
-        return retval
+    def find_by_id(id, select = None, populate=None, one=False):
+        global roles
+        retval = methods.find_by_id(roles, Role.schema, id, select, populate)
+        return Role.parse(retval)
 
     @staticmethod
     def update(query, update, many = False):
-        global users
-        retval = methods.update(users, query, update, many)
+        global roles
+        retval = methods.update(roles, query, update, many)
         return retval
 
     @staticmethod
     def delete(query, many = False):
-        global users
-        retval = methods.delete(users, query, many)
+        global roles
+        retval = methods.delete(roles, query, many)
         return retval
 
     @staticmethod
     def parse(dictionary):
-        user = User()
-        user.fromJson(dictionary)
-        return user
+        role = Role()
+        role.fromJson(dictionary)
+        return role
