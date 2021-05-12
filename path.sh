@@ -8,4 +8,4 @@ mkdir -p "$SITEDIR"
 
 #create new .pth file with our path
 
-echo "/home/pymongoose" > "$SITEDIR/pymongoose.pth"
+echo "./" > "$SITEDIR/pymongoose.pth"
