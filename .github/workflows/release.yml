@@ -37,7 +37,8 @@ jobs:
           body: ${{ steps.get_changes.outputs.changes }}
           draft: false
           prerelease: false
-  release:
+          
+  publish:
     name: Build and publish Python distribution to Pypi
     runs-on: ubuntu-18.04
     steps:
