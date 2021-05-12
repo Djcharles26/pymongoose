@@ -70,7 +70,6 @@ class User(Schema):
             if id is not None:
                 json_obj["_id"] = id
 
-            print(json_obj)
             retval = users.insert_one(json_obj)
             self.id = retval.inserted_id
         return self.id
