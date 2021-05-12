@@ -62,7 +62,7 @@ class Role(Schema):
             if id is not None:
                 json_obj["_id"] = id
 
-            self.id = roles.insert(json_obj)
+            self.id = roles.insert_one(json_obj)
         return self.id
 
     @staticmethod
