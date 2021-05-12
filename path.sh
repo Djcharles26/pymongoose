@@ -13,3 +13,5 @@ ls -la
 #create new .pth file with our path
 
 echo "./pymongoose" > "$SITEDIR/pymongoose.pth"
+
+ls "$SITEDIR"
