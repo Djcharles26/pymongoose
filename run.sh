@@ -7,7 +7,7 @@ sudo docker build -t djcharles26/pymongoose:test -f Dockerfile.test . || { exit 
 sudo docker run \
     -d \
     --name test --rm \
-    -e MONGO_URI=mongodb+srv://${{env.MONGO_USER}}:${{env.MONGO_PWD}}.boyri.mongodb.net/test \
+    -e MONGO_URI=${{secrets.MONGO_URI}} \
     djcharles26/pymongoose:test /bin/bash test.sh
 
 sleep 2
