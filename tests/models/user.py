@@ -70,7 +70,7 @@ class User(Schema):
             if id is not None:
                 json_obj["_id"] = id
 
-            self.id = users.insert(json_obj)
+            self.id = users.insert_one(json_obj)
         return self.id
 
     @staticmethod

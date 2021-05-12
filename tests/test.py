@@ -45,7 +45,7 @@ def test_insert():
             action=["Insert", "Delete", "Update"]
         )
 
-        role.save()
+        role_id = role.save()
     except:
         traceback.print_exc()
         raise Exception("Role insertion failed")
@@ -55,14 +55,14 @@ def test_insert():
         userA = User(
             name="TestA",
             password="test",
-            role=role.id
+            role=role_id
         )
 
 
         userB = User(
             name="TestB",
             password="test",
-            role=role.id
+            role=role_id
         )
 
         userA.save()
