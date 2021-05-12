@@ -1,0 +1,6 @@
+PYMONGOOSE_VERSION = "0.1"
+PYMONGOOSE_VERSION_NAME = "Version 0.1"
+PYMONGOOSE_VERSION_AUTHOR = "Juan Carlos Lara"
+
+def pymongoose_version_print_full():
+    print(f"{PYMONGOOSE_VERSION} - {PYMONGOOSE_VERSION_NAME}\nBy: {PYMONGOOSE_VERSION_AUTHOR}")
