@@ -22,11 +22,11 @@ jobs:
 
       - name: Copy .pth file to directory
         run: |
-          bash test.sh
+          bash path.sh
 
       - name: Pymongoose unit testing
         env: 
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
-          pytest tests/test.py
+          bash test.sh
 
