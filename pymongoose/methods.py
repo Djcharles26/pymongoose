@@ -70,7 +70,7 @@ def _populate(schema, populate, aggregate, parent=""):
             }
             aggregate.append(e)
 
-            if isList:
+            if not isList:
                 unwind = {
                     "path": f"${parent + pop}",
                     "preserveNullAndEmptyArrays": True
