@@ -1,2 +1,2 @@
-## Populate fix
-- Added list validation in populate to left field as list
+## Validation fix
+- Fixed validation of list in population
