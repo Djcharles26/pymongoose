@@ -70,11 +70,12 @@ def _populate(schema, populate, aggregate, parent=""):
             }
             aggregate.append(e)
 
-            unwind = {
-                "path": f"${parent + pop}",
-                "preserveNullAndEmptyArrays": True
-            }
-            aggregate.append({"$unwind": unwind})
+            if isList:
+                unwind = {
+                    "path": f"${parent + pop}",
+                    "preserveNullAndEmptyArrays": True
+                }
+                aggregate.append({"$unwind": unwind})
             
         else: 
             aux_schema, isList = _get_clean_schema(schema, pop["path"])
