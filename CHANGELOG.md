@@ -1,2 +1,2 @@
-## Validation fix
-- Fixed validation of list in population
+## Updates
+- Updated way lists are extracted if default values doesn't exist

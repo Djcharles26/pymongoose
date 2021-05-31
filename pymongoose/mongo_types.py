@@ -69,9 +69,10 @@ class Schema(object):
 				if type(valAux[k]) is dict:
 					e = self.parse_schema_value(valAux[k])
 					dictionary[k] = e
-
-			
-			return None if len(dictionary) == 0 else dictionary if not isList else [dictionary]
+			if isList:
+				return [] if len(dictionary) == 0 else [dictionary]
+			else:
+				return None if len(dictionary) == 0 else dictionary
 
 	def extract(self, key, json_obj):
 		"""
