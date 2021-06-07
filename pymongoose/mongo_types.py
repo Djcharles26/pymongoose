@@ -138,7 +138,11 @@ class Schema(object):
 		[value] or None
 		"""
 		try:
-			return kwargs[name] if name in kwargs else self.parse_schema_value(self.schema[name])
+			cond = name in kwargs
+			if(cond and "ignore_none" in kwargs and kwargs["ignore_none"]):
+				cond = cond and kwargs[name] is not None
+			return kwargs[name] if cond else self.parse_schema_value(self.schema[name])
+
 		except:
 			return None
 
