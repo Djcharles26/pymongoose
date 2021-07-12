@@ -207,7 +207,7 @@ def _convert_id_to_object_id(id) -> ObjectId:
         id = ObjectId(id)
     return id
 
-def find(collection, schema, query, select = {}, populate=None, one=False, skip = 0, limit =math.inf, sort = None):
+def find(collection, schema, query, select = {}, populate=None, one=False, skip = 0, limit=None, sort = None):
     global schemas
     """
 	Find a document inside a collection
@@ -256,7 +256,10 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
             if one:
                 retval = collection.find_one(query, select)
             else:
-                retval = collection.find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
+                if limit is None:
+                    retval = collection.find(query, select).skip(skip).sort(sort_key, sort_value)
+                else:
+                    retval = collection.find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
         else:
             aggregate = [
                 {"$match" : query}
@@ -272,10 +275,11 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
             aggregate.append({
                 "$skip": skip
             })
-
-            aggregate.append({
-                "$limit": limit
-            })
+            
+            if(limit is not None):
+                aggregate.append({
+                    "$limit": limit
+                })
 
             aggregate.append({
                 "$sort": {
