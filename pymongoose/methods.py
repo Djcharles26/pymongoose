@@ -1,7 +1,9 @@
 import sys
+from pymongo import DESCENDING, ASCENDING
 from bson.objectid import ObjectId
 from .mongo_types import *
 from pprint import pprint
+import math
 
 schemas = {}
 
@@ -205,7 +207,7 @@ def _convert_id_to_object_id(id) -> ObjectId:
         id = ObjectId(id)
     return id
 
-def find(collection, schema, query, select = {}, populate=None, one=False):
+def find(collection, schema, query, select = {}, populate=None, one=False, skip = 0, limit =math.inf, sort = None):
     global schemas
     """
 	Find a document inside a collection
@@ -226,13 +228,27 @@ def find(collection, schema, query, select = {}, populate=None, one=False):
     ### one: bool
         Variable to select if return one ore many
         defaults to: False
+    ### skip: int
+        Integer to skip to 'n' values to the left in the collection
+        defaults to: 0
+    ### limit: int
+        Integer to limit number of documents returned from the collection
+        defaults to: infinite
+    ### sort: dict
+        Dictionary to set an order of documents based on a field
+        defaults to: None
     # Returns
     ------------
-    - coursor if one is False else dict
+    - cursor if one is False else dict
 	"""
     try:
         if "_id" in query and type(query["_id"]) is not dict:
             query["_id"] = _convert_id_to_object_id(query["_id"])
+        
+        sort_key, sort_value = "_id", ASCENDING
+        if sort is not None:
+                    sort_key = sort.keys()[0]
+                    sort_value = ASCENDING if sort[sort_key] == 1 else DESCENDING
 
         schema = schemas[schema]
         retval = {}
@@ -240,7 +256,7 @@ def find(collection, schema, query, select = {}, populate=None, one=False):
             if one:
                 retval = collection.find_one(query, select)
             else:
-                retval = collection.find(query, select)
+                retval = collection.find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
         else:
             aggregate = [
                 {"$match" : query}
@@ -252,6 +268,21 @@ def find(collection, schema, query, select = {}, populate=None, one=False):
                 aggregate.append({
                     "$project": select
                 })
+
+            aggregate.append({
+                "$skip": skip
+            })
+
+            aggregate.append({
+                "$limit": limit
+            })
+
+            aggregate.append({
+                "$sort": {
+                    f"{sort_key}": sort_value
+                }
+            })
+            
 
             retval = collection.aggregate(aggregate)
 
