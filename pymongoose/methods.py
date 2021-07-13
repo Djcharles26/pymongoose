@@ -247,7 +247,7 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
         
         sort_key, sort_value = "_id", ASCENDING
         if sort is not None:
-                    sort_key = sort.keys()[0]
+                    sort_key = list(sort.keys())[0]
                     sort_value = ASCENDING if sort[sort_key] == 1 else DESCENDING
 
         schema = schemas[schema]

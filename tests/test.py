@@ -89,6 +89,20 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
+def test_find_sort():
+    mongo_init()
+    try:
+        users = User.find({}, sort={"name": -1})
+        if users is None or users.count() == 0:
+            return 1
+        
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
 def test_find_by_id():
     mongo_init()
     try:
