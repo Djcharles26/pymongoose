@@ -80,9 +80,9 @@ class User(Schema):
         retval = methods.exists(users, query)
         return retval
     @staticmethod
-    def find(query, select = None, populate=None, one=False):
+    def find(query, select = None, populate=None, one=False, skip=0, limit=None, sort=None):
         global users
-        retval = methods.find(users, "users", query, select, populate, one)
+        retval = methods.find(users, "users", query, select, populate, one, skip, limit, sort)
         if one:
             if retval is not None:
                 retval = User.parse(retval)
