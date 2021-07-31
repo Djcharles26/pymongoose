@@ -1,7 +1,10 @@
-import sys
+import sys, traceback
 from enum import Enum
 import datetime
 import bson.json_util as json_util
+from pymongoose.logger import Logger
+from pymongoose import methods
+from bson import ObjectId
 import json
 
 
@@ -35,10 +38,19 @@ class MongoException(Exception):
 	def __init__(self, *args, **kwargs):
 		self.message = kwargs["message"]
 		self.mongoError = kwargs["mongoError"]
-		self.bt = kwargs["bt"]
 		exc_type, exc_obj, exc_tb = sys.exc_info()
-		super().__init__(f"{self.bt}, line: {exc_tb.tb_lineno}")
-		print(exc_tb.tb_lineno)	
+		super().__init__(
+			# f"Exception ocurred in line = {exc_tb.tb_lineno}\n",
+			f"Offense ocurred = {MongoError(self.mongoError).name}\n" +
+			f"Thrown message = {self.message}"
+		)
+		traceback.print_exc()
+		if methods.debug_log:
+			Logger.printError(
+				# f"Exception ocurred in line = {exc_tb.tb_lineno}\n",
+				f"Offense ocurred = {MongoError(self.mongoError).name}\n" +
+				f"Thrown message = {self.message}"
+			)	
 
 class Schema(object):
 	"""
