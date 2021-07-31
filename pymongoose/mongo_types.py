@@ -21,7 +21,8 @@ class MongoError(Enum):
 	"""
 	Empty_dataset	= 1
 	Required_field 	= 2
-	Bad_action		= 3
+	Bad_type 		= 3
+	Bad_action		= 4
 
 class MongoException(Exception):
 	"""
