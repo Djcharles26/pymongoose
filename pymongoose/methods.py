@@ -3,24 +3,44 @@ from pymongo import DESCENDING, ASCENDING
 from bson.objectid import ObjectId
 from .mongo_types import *
 from pprint import pprint
+from pymongoose.logger import Logger
 import math
 
 schemas = {}
+debug_log = True
+database = None
 
-def set_schemas(schemas_re):
+def set_schemas(db, schemas_re, _debug_log_=True):
     """
     ## Description:
     Function to be called were you control your models registration
     # Parameters
     ------------
+    - db: Database
+    MongoDB connection database
     - schemas_re: dict
     A dictionary with all your registerd schemas.
     f.e: {"users": User.schema}
+    - _debug_log_: bool
+    A variable to set logs on or off
+    Default True
     """
+    global database
     global schemas
+    global debug_log
+    database = db
     schemas = schemas_re
-    print("MongoDB Schemas: ")
-    pprint(schemas)
+    _debug_log_ = debug_log
+    if debug_log:
+        Logger.set_terminal_color("blue")
+        print("MongoDB Schemas: ")
+        pprint(schemas)
+        Logger.set_terminal_color("reset")
+
+def get_schema_by_name(name:str) -> dict:
+    if name in schemas:
+        return schemas[name]
+    else: return None
 
 def exists(collection, query):
     """
