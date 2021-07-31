@@ -227,16 +227,15 @@ def _convert_id_to_object_id(id) -> ObjectId:
         id = ObjectId(id)
     return id
 
-def find(collection, schema, query, select = {}, populate=None, one=False, skip = 0, limit=None, sort = None):
+def find(schema: str, query: dict, select = {}, populate=None, one=False, skip = 0, limit=None, sort=None):
     global schemas
+    schema_name = schema
     """
 	Find a document inside a collection
 	# Parameters
 	------------
-	### collection: Mongo collection
-		Mongo collection where query will be executed
-    ### schema: dict
-        Schema created in order to manage mongo documents
+    ### schema: str
+        Schema Name created in order to manage mongo documents
     ### query: dict
         Dictionary containing query
     ### select: dict
@@ -274,12 +273,12 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
         retval = {}
         if populate is None:
             if one:
-                retval = collection.find_one(query, select)
+                retval = database[schema_name].find_one(query, select)
             else:
                 if limit is None:
-                    retval = collection.find(query, select).skip(skip).sort(sort_key, sort_value)
+                    retval = database[schema_name].find(query, select).skip(skip).sort(sort_key, sort_value)
                 else:
-                    retval = collection.find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
+                    retval = database[schema_name].find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
         else:
             aggregate = [
                 {"$match" : query}
@@ -308,7 +307,7 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
             })
             
 
-            retval = collection.aggregate(aggregate)
+            retval = database[schema_name].aggregate(aggregate)
 
             
         if populate is not None and one:
@@ -324,14 +323,12 @@ def find(collection, schema, query, select = {}, populate=None, one=False, skip 
     except:
         raise MongoException(message="Error finding document(s)", mongoError=MongoError.Bad_action, bt=sys.exc_info())
 
-def find_by_id(collection, schema, id, select = {}, populate=None):
+def find_by_id(schema, id, select = {}, populate=None):
     """
 	Find a document inside a collection by _id
     (Same as find({_id:id}))
 	# Parameters
 	------------
-	### collection: Mongo collection
-		Mongo collection where query will be executed
     ### schema: dict
         Schema created in order to manage mongo documents
     ### id: str
@@ -349,10 +346,18 @@ def find_by_id(collection, schema, id, select = {}, populate=None):
     if type(id) is not dict:
         id = _convert_id_to_object_id(id)
     
-    retval = find(collection, schema, {"_id": id}, select, populate, one=True)
+    retval = find(schema, {"_id": id}, select, populate, one=True)
     return retval
 
-def aggregate(collection, aggregate):
+def insert_one(schema, object: dict) -> ObjectId:
+    try:
+        retval = database[schema].insert_one(object)
+
+        return retval.inserted_id
+    except:
+        raise MongoException(message=f"Error saving object in {schema}", mongoError=MongoError.Bad_action)
+
+def aggregate(schema, aggregate):
     """
 	Find a document inside a collection
 	# Parameters
@@ -365,15 +370,15 @@ def aggregate(collection, aggregate):
     ------------
     - coursor if one is False else dict
 	"""
-    return collection.aggregate(aggregate)
+    return database[schema].aggregate(aggregate)
 
-def update(collection, query, update, many = False):
+def update(schema, query, update, many = False):
     """
 	Update a document inside collection
 	# Parameters
 	------------
-	### collection: Mongo collection
-		Mongo collection where query will be executed
+    ### schema: dict
+        Schema created in order to manage mongo documents
     ### query: dict
         Dictionary containing query
     ### update: dict
@@ -390,21 +395,21 @@ def update(collection, query, update, many = False):
             query["_id"] = _convert_id_to_object_id(query["_id"])
 
         if not many:
-            retval = collection.update_one(query, update)
+            retval = database[schema].update_one(query, update)
             return retval.modified_count
         else:
-            retval = collection.update_many(query, update)
+            retval = database[schema].update_many(query, update)
             return retval.modified_count
     except:
         raise MongoException(sys.exc_info()[0],  message="Error updating document(s)", mongoError=MongoError.Bad_actio)
 
-def delete(collection, query, many = False):
+def delete(schema, query, many = False):
     """
 	Delete documents inside collection
 	# Parameters
 	------------
-	### collection: Mongo collection
-		Mongo collection where query will be executed
+	### schema: dict
+        Schema created in order to manage mongo documents
     ### query: dict
         Dictionary containing query
     ### many: bool
@@ -419,10 +424,10 @@ def delete(collection, query, many = False):
             query["_id"] = _convert_id_to_object_id(query["_id"])
 
         if many:
-            retval = collection.delete_many(query)
+            retval = database[schema].delete_many(query)
             return retval.deleted_count
         else:
-            collection.delete_one(query)
+            database[schema].delete_one(query)
             return 1
     except:
         raise MongoException(message="Error deleting document(s)", mongoError=MongoError.Bad_action, bt=sys.exc_info()[0])
