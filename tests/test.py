@@ -2,8 +2,9 @@ import os, traceback
 import signal 
 from pymongo import MongoClient
 from pymongoose.methods import set_schemas, get_cursor_length
-from models.user import user_model_init, User
-from models.role import role_model_init, Role
+from models.user import User
+from models.role import Role
+
 
 MONGO_URI = os.environ.get("MONGO_URI")
 
@@ -17,15 +18,13 @@ def mongo_init ():
     client = MongoClient(MONGO_URI)
     db = client.test
     try:
-        user_model_init(db)
-        role_model_init(db)
 
         schemas = {
             "users": User(empty=True).schema,
             "roles": Role(empty=True).schema
         }
 
-        set_schemas(schemas)
+        set_schemas(db, schemas)
         print("MongoDB Connected!")
     except:
         traceback.print_exc()
@@ -42,9 +41,8 @@ def test_insert():
     try:
         role = Role(
             name="common",
-            action=["Insert", "Delete", "Update"]
+            actions=["Insert", "Delete", "Update"]
         )
-
         role_id = role.save()
     except:
         traceback.print_exc()
@@ -70,7 +68,8 @@ def test_insert():
 
         users.append(userA)
         users.append(userB)
-        
+        print("Insert exit with code 0")
+        return 0
     except:
         traceback.print_exc()
         raise Exception("Users insertion failed")
@@ -81,7 +80,8 @@ def test_find():
         users = User.find({})
         if users is None or users.count() == 0:
             return 1
-        
+
+        print("Find exit with code 0")
         return 0
 
     except:
@@ -93,9 +93,11 @@ def test_find_sort():
     mongo_init()
     try:
         users = User.find({}, sort={"name": -1})
+        print(users.count())
         if users is None or users.count() == 0:
             return 1
-        
+
+        print("Find sorted exit with code 0")
         return 0
 
     except:
@@ -112,6 +114,7 @@ def test_find_by_id():
             raise Exception("No user was found!")
             return 1
 
+        print("Find by id exit with code 0")
         return 0
     except:
         raise Exception("Error finding")
@@ -125,7 +128,7 @@ def test_find_one():
         if user is None:
             raise Exception("No one user found")
             return 1
-
+        print("Find one exit with code 0")
         return 0
     except:
         raise Exception("Error finding")
@@ -143,7 +146,7 @@ def test_update():
         if count == 0:
             raise Exception("No Updates were applied")
             return 1
-        
+        print("Update exit with code 0")
         return 0
     except:
         raise Exception("Error updating")
@@ -162,6 +165,7 @@ def test_update_one():
             raise Exception("No Updates were applied")
             return 1
 
+        print("Update one exit with code 0")
         return 0
 
     except:
@@ -176,7 +180,7 @@ def test_populate():
         if user is None or get_cursor_length(user) == 0:
             raise Exception("No users where returned after populate")
             return 1
-
+        print("find populated exit with code 0")
         return 0
     except:
         raise Exception("Error populating")
@@ -191,7 +195,7 @@ def test_populate_one():
         if user is None:
             raise Exception("No user was populated")
             return 1
-
+        print("Find one populated exit with code 0")
         return 0
     except:
         raise Exception("Error populating one")
@@ -205,7 +209,7 @@ def test_delete_one():
         if count == 0:
             raise Exception("No role was deleted")
             return 1
-
+        print("Delete one exit with code 0")
         return 0
     except:
         raise Exception("Error deleting one")
@@ -219,10 +223,21 @@ def test_delete_many():
         if count == 0:
             raise Exception("No users where deleted")
             return 1
-
+        print("Delete many with code 0")
         return 0
     except:
         raise Exception("Error deleting many")
         traceback.print_exc()
         return 1
 
+# test_insert()
+# test_find()
+# test_find_sort()
+# test_find_by_id()
+# test_find_one()
+# test_update()
+# test_update_one()
+# test_populate()
+# test_populate_one()
+# test_delete_one()
+# test_delete_many()

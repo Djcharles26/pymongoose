@@ -23,115 +23,32 @@ from pymongoose.mongo_types import Types, Schema, MongoException, MongoError
 from bson import json_util
 from bson.objectid import ObjectId
 
-roles = None
-
-#Required function
-def role_model_init (db):
-   global roles
-   roles = db["roles"]
 
 class Role(Schema):
-    #Global variables of the model
+    schema_name = "roles" # Name of the schema that mongo uses
+    
+    # Attributes
     id = None
     name = None
     action = None
 
     def __init__(self, **kwargs):
-        #Schema of the model
         self.schema = {
             "name": {
                 "type": Types.String,
                 "required": True
             },
-            "action": {
+            "actions": [{
                 "type": Types.String,
                 "required": True
-            }
+            }]
         }
 
-        #Declaration of fields when a Model Object is created
-        if not "empty" in kwargs:
-            self.id = ObjectId()
-            self.name = super().get_default_value("name", kwargs)
-            self.action = super().get_default_value("action", kwargs)
+        super().__init__(self.schema_name, self.schema, kwargs)
 
-        self.iat = 0
-        self.items_count = 0
 
     def __str__(self):
-        return f"Role: {self.name}, Password: {self.action}"
-
-    ## Required function
-    def fromJson(self, json_obj):
-        self.id = super().extract("_id", json_obj)
-        self.name = super().extract("name", json_obj)
-        self.action = super().extract("action", json_obj)
-        
-    ## Required function
-    def toJson(self, full = True):
-        json_obj =  {
-            "name": self.name,
-            "action": self.action
-        }
-        if full:
-            json_obj["id"] = self.id
-        return super().convert_json(json_obj) if full else json_obj
-
-    ## Required function
-    def save(self, id = None):
-        if not super().validate_required(self.toJson(False), super().schema):
-            raise MongoException(message="Required fields missing", mongoError=MongoError.Required_field)
-        else:
-            json_obj = self.toJson(False)
-            if id is not None:
-                json_obj["_id"] = id
-
-            self.id = roles.insert(json_obj)
-        return self.id
-
-    ## Required function
-    @staticmethod
-    def exists(query):
-        global roles
-        retval = methods.exists(roles, query)
-        return retval
-    
-    ## Required function
-    @staticmethod
-    def find(query, select = None, populate=None, one=False):
-        global roles
-        retval = methods.find(roles, Role.schema, query, select, populate, one)
-        if one:
-            retval = Role.parse(retval)
-        return retval
-
-    ## Required function
-    @staticmethod
-    def find_by_id(id, select = None, populate=None, one=False):
-        global roles
-        retval = methods.find_by_id(roles, Role.schema, id, select, populate)
-        return Role.parse(retval)
-
-    ## Required function
-    @staticmethod
-    def update(query, update, many = False):
-        global roles
-        retval = methods.update(roles, query, update, many)
-        return retval
-
-    ## Required function
-    @staticmethod
-    def delete(query, many = False):
-        global roles
-        retval = methods.delete(roles, query, many)
-        return retval
-
-    ## Required function
-    @staticmethod
-    def parse(dictionary):
-        role = Role()
-        role.fromJson(dictionary)
-        return role
+        return f"Role: {self.name}, Actions: {self.action}"
 ```
 
 **Is higly recommended to follow this model for any schema**
@@ -145,7 +62,7 @@ db.py:
     import signal 
     from pymongo import MongoClient
     from pymongoose.methods import set_schemas, get_cursor_length
-    from models.role import role_model_init, Role
+    from models.role import Role
 
     MONGO_URI = os.environ.get("MONGO_URI")
 
@@ -157,13 +74,11 @@ db.py:
         client = MongoClient(MONGO_URI)
         db = client.test
         try:
-            role_model_init(db)
-
             schemas = {
                 "roles": Role(empty=True).schema
             }
 
-            set_schemas(schemas)
+            set_schemas(db, schemas)
             print("MongoDB Connected!")
         except:
             traceback.print_exc()
