@@ -160,7 +160,69 @@ class Schema(object):
 			return True if type(value) is datetime.datetime else False
 		else: return True
 
-	def validate_required(self, json_obj, sc=schema) -> bool:
+	def _item_type_check(self, key, type, item_type): 
+		if type == Types.Number:
+			if item_type is int or item_type is float:
+				return True
+			else:
+				if methods.debug_log:
+					Logger.printError(f"key {key} has an incorrect type") 
+				return False
+		elif type == Types.String:
+			if item_type is str:
+				return True
+			else:
+				if methods.debug_log:
+					Logger.printError(f"key {key} has an incorrect type") 
+				return False
+		elif type == Types.Date:
+			if item_type is datetime:
+				return True
+			else:
+				if methods.debug_log:
+					Logger.printError(f"key {key} has an incorrect type") 
+				return False
+		elif type == Types.ObjectId:
+			if item_type is ObjectId:
+				return True
+			else:
+				if methods.debug_log:
+					Logger.printError(f"key {key} has an incorrect type") 
+				return False
+
+	def validate_type(self, json_obj: dict, sc=schema, last_key = None) -> bool:
+		scAux = sc
+		if type(sc) is list:
+			scAux = sc[0]
+
+		if "type" in scAux:
+			retval = True
+			if type(json_obj) is list:
+				for item in json_obj:
+					retval = self._item_type_check(last_key, scAux["type"], type(item))
+			else:
+				retval = self._item_type_check(last_key, scAux["type"], type(json_obj))
+			return retval
+					
+
+		for k in scAux:
+			retval = True
+			if "type" in scAux[k]:
+				tp = type(json_obj[k])
+				retval = self._item_type_check(k, scAux[k]["type"], tp)
+				
+			elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
+				retval = self.validate_type(json_obj[k], scAux[k], last_key=k)
+			else:
+				if methods.debug_log:
+					Logger.printWarn(f"key={k} in schema doesn't contain any type, returning True")
+				retval = True
+
+			if not retval: return retval
+
+		return True
+
+	def validate_required(self, json_obj: dict, sc=schema) -> bool:
 		"""
 		Check if current schema object contains all required fields dicted by schema
 		# Parameters:
@@ -173,6 +235,9 @@ class Schema(object):
 		if type(sc) is list:
 			scAux = sc[0]
 
+		if "required" in scAux:
+			return json_obj is not None
+
 		for k in scAux:
 			retval = True
 			if "required" in scAux[k]:
@@ -183,7 +248,13 @@ class Schema(object):
 			elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
 				retval = self.validate_required(json_obj[k], scAux[k])
 			else:
+				if methods.debug_log:
+					Logger.printLog(f"key={k} doesn't contain required value, setting by default in False")
 				retval = True
+
+			if retval:
+				if methods.debug_log:
+					Logger.printSuccess(f"key '{k}' has a valid argument")
 
 			if not retval: return retval
 
