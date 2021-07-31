@@ -56,9 +56,60 @@ class Schema(object):
 	"""
 	Parent class of any schema that is created
 	"""
+	id = None
 	schema = {}
-	def __init__(self, schema):
+	schema_name = None
+
+	def __init__(self, schema_name, schema, initial_values = {}):
 		self.schema = schema
+		self.schema_name = schema_name
+		self.id = ObjectId()
+
+		is_empty = False
+		if "empty" in initial_values:
+			is_empty = initial_values["empty"]
+
+		
+		if not is_empty:
+			if len(initial_values) == 0:
+				initial_values = {}
+			
+			clean_schema = {}
+			for key in self.schema.keys():
+				clean_schema[key] = self.get_default_value(key, initial_values)
+
+			self.__dict__.update(clean_schema)
+	
+
+	def fromJson(self, json_obj):
+		for key in self.schema.keys():
+			setattr(self, key, self.get_default_value(key, json_obj))
+
+	def toJson (self, full=True):
+		json_obj = {}
+
+		for key in self.schema.keys():
+			json_obj[key] = getattr(self, key)
+
+		if full:
+			json_obj["id"] = self.id
+
+		return json_obj
+
+	def save(self, id = None):
+		if not self.validate_required(self.toJson(False), self.schema):
+			raise MongoException(message="Required fields missing", mongoError=MongoError.Required_field)
+		elif not self.validate_type(self.toJson(False), self.schema):
+			raise MongoException(message="Type fields are wrong", mongoError=MongoError.Bad_type, bt=sys.exc_info())
+
+		else:
+			json_obj = self.toJson(False)
+			if id is not None:
+				json_obj["_id"] = id
+
+			retval = methods.insert_one(self.schema_name, json_obj)
+			self.id = retval
+		return self.id
 
 	def parse_schema_value(self, value):
 		"""
