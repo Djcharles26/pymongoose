@@ -223,3 +223,41 @@ class Schema(object):
 		obj = json_util.dumps(json_obj, json_options=json_util.STRICT_JSON_OPTIONS)
 		obj = json.loads (obj)
 		return obj
+
+	@classmethod
+	def exists(cls, query):
+		retval = methods.exists(cls.collection, query)
+		return retval
+
+	@classmethod
+	def find(cls, query, select = None, populate=None, one=False, skip = 0, limit=None, sort=None):
+		Logger.printLog(cls.schema_name)
+		retval = methods.find(cls.schema_name, query, select, populate, one)
+		if one:
+			retval = cls.parse(retval)
+		return retval
+
+	@classmethod
+	def find_by_id(cls, id, select = None, populate=None):
+		retval = methods.find_by_id(cls.schema_name, id, select, populate)
+		return cls.parse(retval)
+
+	@classmethod
+	def aggregate(cls, aggregate):
+		retval = methods.aggregate(cls.schema_name, aggregate)
+
+	@classmethod
+	def update(cls, query, update, many = False):
+		retval = methods.update(cls.schema_name, query, update, many)
+		return retval
+
+	@classmethod
+	def delete(cls, query, many = False):
+		retval = methods.delete(cls.schema_name, query, many)
+		return retval
+
+	@classmethod
+	def parse(cls, dictionary):
+		schema = cls()
+		schema.fromJson(dictionary)
+		return schema
