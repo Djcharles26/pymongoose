@@ -264,6 +264,7 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
         if "_id" in query and type(query["_id"]) is not dict:
             query["_id"] = _convert_id_to_object_id(query["_id"])
         
+        
         sort_key, sort_value = "_id", ASCENDING
         if sort is not None:
                     sort_key = list(sort.keys())[0]
@@ -275,10 +276,16 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
             if one:
                 retval = database[schema_name].find_one(query, select)
             else:
-                if limit is None:
-                    retval = database[schema_name].find(query, select).skip(skip).sort(sort_key, sort_value)
+                if sort is not None:
+                    if limit is None:
+                        retval = database[schema_name].find(query, select).skip(skip).sort(sort_key, sort_value)
+                    else:
+                        retval = database[schema_name].find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
                 else:
-                    retval = database[schema_name].find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
+                    if limit is None:
+                        retval = database[schema_name].find(query, select).skip(skip)
+                    else:
+                        retval = database[schema_name].find(query, select).skip(skip).limit(limit)
         else:
             aggregate = [
                 {"$match" : query}
@@ -300,11 +307,12 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
                     "$limit": limit
                 })
 
-            aggregate.append({
-                "$sort": {
-                    f"{sort_key}": sort_value
-                }
-            })
+            if(sort is not None):
+                aggregate.append({
+                    "$sort": {
+                        f"{sort_key}": sort_value
+                    }
+                })
             
 
             retval = database[schema_name].aggregate(aggregate)
