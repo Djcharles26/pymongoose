@@ -1,2 +1,3 @@
 ## Minor updates
-- Added validation of sort is None to avoid sorting with id in find
+- Added parse argument to find and find by id methods
+- Added documentation to all methods
