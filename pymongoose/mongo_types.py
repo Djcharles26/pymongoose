@@ -61,6 +61,15 @@ class Schema(object):
 	schema_name = None
 
 	def __init__(self, schema_name, schema, initial_values = {}):
+		"""
+		### schema_name: str
+			Name set to the schema (must be plural)
+		### schema: dict
+			Schema generated with types, defaults and/or required fields
+		### initial_values: dict
+			Dictionary containing initial values of this schema, must contain same names as the schema has
+			defaults to: {}
+		"""
 		self.schema = schema
 		self.schema_name = schema_name
 		self.id = ObjectId()
@@ -80,12 +89,22 @@ class Schema(object):
 
 			self.__dict__.update(clean_schema)
 	
-
 	def fromJson(self, json_obj):
 		for key in self.schema.keys():
 			setattr(self, key, self.get_default_value(key, json_obj))
 
 	def toJson (self, full=True):
+		"""
+		Method to convert current Schema object to a dictionary
+		# Parameters
+		------------
+		### full: bool
+			If true, will attach id to dictionary
+			defaults to: True
+		# Returns
+		------------
+		- dict
+		"""
 		json_obj = {}
 
 		for key in self.schema.keys():
@@ -97,6 +116,17 @@ class Schema(object):
 		return json_obj
 
 	def save(self, id = None):
+		"""
+		Function to save current object into a mongoDB collection
+		# Parameters
+		------------
+		### id: ObjectId
+			Set a forced id to save method
+			defaults to: None
+		# Returns
+		------------
+		- ObjectId -> Saved id
+		"""
 		if not self.validate_required(self.toJson(False), self.schema):
 			raise MongoException(message="Required fields missing", mongoError=MongoError.Required_field)
 		elif not self.validate_type(self.toJson(False), self.schema):
@@ -301,34 +331,138 @@ class Schema(object):
 		return retval
 
 	@classmethod
-	def find(cls, query, select = None, populate=None, one=False, skip = 0, limit=None, sort=None):
-		Logger.printLog(cls.schema_name)
+	def find(cls, query, select = None, populate=None, one=False, skip = 0, limit=None, sort=None, parse=True):
+		"""
+		Find a document inside a collection
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		### select: dict
+			Dictionary containing requested fields
+			defaults to: {}
+		### populate: dict
+			Dictionary containing lookup structure of the fields required to populate
+			defaults to: None
+		### one: bool
+			Variable to select if return one ore many
+			defaults to: False
+		### skip: int
+			Integer to skip to 'n' values to the left in the collection
+			defaults to: 0
+		### limit: int
+			Integer to limit number of documents returned from the collection
+			defaults to: None
+		### sort: dict
+			Dictionary to set an order of documents based on a field
+			defaults to: None
+		### parse: bool
+			If one is True, then document could be parsed and returned as a Schema object
+			defaults to: True
+		# Returns
+		------------
+		- Cursor -> one == False, populate == None
+		- CommandCursor -> populate != None
+		- dict -> one == True, parse = False
+		- Schema object -> one == True, parse == True
+		- None -> not found
+		"""
+		if methods.debug_log:
+			Logger.printLog(cls.schema_name)
 		retval = methods.find(cls.schema_name, query, select, populate, one)
 		if one:
-			retval = cls.parse(retval)
+			retval = cls.parse(retval) if parse else retval
 		return retval
 
 	@classmethod
-	def find_by_id(cls, id, select = None, populate=None):
+	def find_by_id(cls, id, select = None, populate=None, parse=True):
+		"""
+		Find a document inside a collection by id
+		# Parameters
+		------------
+		### id: str | ObjectId
+			Id of the document to lookup
+		### select: dict
+			Dictionary containing requested fields
+			defaults to: {}
+		### populate: dict
+			Dictionary containing lookup structure of the fields required to populate
+			defaults to: None
+		### parse: bool
+			If true, document will be returned as an Schema Object
+			defaults to: True
+		# Returns
+		------------
+		- dict -> parse = False
+		- Schema object -> parse = True 
+		"""
 		retval = methods.find_by_id(cls.schema_name, id, select, populate)
-		return cls.parse(retval)
+		return cls.parse(retval) if parse else retval
 
 	@classmethod
 	def aggregate(cls, aggregate):
+		"""
+		Generate an Aggregate inside a collection
+		# Parameters
+		-------------
+		### aggregate: list
+		List of dicts following aggregation mongodb rules
+		# Returns
+		------------
+		- commandCursor
+		"""
 		retval = methods.aggregate(cls.schema_name, aggregate)
 
 	@classmethod
 	def update(cls, query, update, many = False):
+		"""
+		Update document(s) inside a collection by query
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		### update: dict
+			Dictionary containing update, following mongoDB rules
+		### many: bool
+			If True, will modify all documents found with that query
+		defaults to False
+		# Returns
+		------------
+		- int -> Modified count
+		"""
 		retval = methods.update(cls.schema_name, query, update, many)
 		return retval
 
 	@classmethod
 	def delete(cls, query, many = False):
+		"""
+		Update document(s) inside a collection by query
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		### many: bool
+			If True, will modify all documents found with that query
+		defaults to False
+		# Returns
+		------------
+		- int -> Modified count
+		"""
 		retval = methods.delete(cls.schema_name, query, many)
 		return retval
 
 	@classmethod
 	def parse(cls, dictionary):
+		"""
+		Converts a dictionary into a Schema object
+		# Parameters
+		------------
+		### dictionary: dict
+			Dictionary containing document information
+		# Returns
+		------------
+		- Schema object -> Result
+		"""
 		schema = cls()
 		schema.fromJson(dictionary)
 		return schema
