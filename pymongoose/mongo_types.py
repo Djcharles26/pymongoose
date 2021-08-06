@@ -94,7 +94,7 @@ class Schema(object):
 		for key in self.schema.keys():
 			setattr(self, key, self.get_default_value(key, json_obj))
 			
-		self.id = self().extract("_id", json_obj)
+		self.id = self.extract("_id", json_obj)
 
 	def toJson (self, full=True):
 		"""
