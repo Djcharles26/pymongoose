@@ -1,3 +1,3 @@
 ## Minor updates
-- Added parse argument to find and find by id methods
-- Added documentation to all methods
+- Fixed missing retval field in mongo_types aggregate
+- Added validation for empty skip in find method
