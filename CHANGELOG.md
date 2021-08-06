@@ -1,2 +1,2 @@
 ## Minor updates
-- Added validation of initial id in __init__ method
+- Added id in fromJson function in mongo_types
