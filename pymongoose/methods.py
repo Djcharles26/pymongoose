@@ -125,7 +125,6 @@ def _populate(schema, populate, aggregate, parent=""):
             if "select" in pop:
                 project = {}
                 for s in pop["select"]:
-                    print(s)
                     project[s]= 1
                 
                 pipeline.append({"$project": project})
@@ -298,9 +297,10 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
                     "$project": select
                 })
 
-            aggregate.append({
-                "$skip": skip
-            })
+            if(skip > 0):
+                aggregate.append({
+                    "$skip": skip
+                })
             
             if(limit is not None):
                 aggregate.append({

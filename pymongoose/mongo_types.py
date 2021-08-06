@@ -397,6 +397,7 @@ class Schema(object):
 		- Schema object -> parse = True 
 		"""
 		retval = methods.find_by_id(cls.schema_name, id, select, populate)
+		
 		return cls.parse(retval) if parse else retval
 
 	@classmethod
@@ -412,6 +413,7 @@ class Schema(object):
 		- commandCursor
 		"""
 		retval = methods.aggregate(cls.schema_name, aggregate)
+		return retval
 
 	@classmethod
 	def update(cls, query, update, many = False):
