@@ -72,7 +72,8 @@ class Schema(object):
 		"""
 		self.schema = schema
 		self.schema_name = schema_name
-		self.id = ObjectId()
+		id = initial_values["id"] if "id" in initial_values else ObjectId()
+		self.id = ObjectId(id) if type(id) is str else id
 
 		is_empty = False
 		if "empty" in initial_values:
