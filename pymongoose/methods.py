@@ -226,6 +226,17 @@ def _convert_id_to_object_id(id) -> ObjectId:
         id = ObjectId(id)
     return id
 
+def count_documents(schema: str, query: dict) -> int:
+    global schemas
+    retval = -1
+    try:
+        schema_name = schema
+        retval = database[schema_name].count_documents(query)
+    except:
+        raise MongoException(message="Error counting document(s)", mongoError=MongoError.Bad_action, bt=sys.exc_info())
+
+    return retval
+
 def find(schema: str, query: dict, select = {}, populate=None, one=False, skip = 0, limit=None, sort=None):
     global schemas
     schema_name = schema

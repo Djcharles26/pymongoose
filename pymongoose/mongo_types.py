@@ -334,6 +334,23 @@ class Schema(object):
 		return retval
 
 	@classmethod
+	def count(cls, query: dict) -> int:
+		"""
+		Count a number of documents inside a collection by query
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		# Returns
+		------------
+		- int
+		"""
+		if methods.debug_log:
+			Logger.printLog(cls.schema_name + " Count")
+		retval = methods.count_documents(cls.schema_name, query)
+		return retval
+
+	@classmethod
 	def find(cls, query, select = None, populate=None, one=False, skip = 0, limit=None, sort=None, parse=True):
 		"""
 		Find a document inside a collection
@@ -372,7 +389,7 @@ class Schema(object):
 		"""
 		if methods.debug_log:
 			Logger.printLog(cls.schema_name)
-		retval = methods.find(cls.schema_name, query, select, populate, one)
+		retval = methods.find(cls.schema_name, query, select, populate, one, skip, limit, sort)
 		if one:
 			retval = cls.parse(retval) if parse else retval
 		return retval
