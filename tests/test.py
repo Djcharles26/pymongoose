@@ -105,6 +105,17 @@ def test_find_sort():
         raise Exception("Error initializing database")
         return 1
 
+def test_count():
+    mongo_init()
+    try:
+        user_count = User.count({})
+        if user_count != -1:
+            return 0
+        else: 
+            raise Exception("No users were count")
+    except:
+        raise Exception("Error counting")
+
 def test_find_by_id():
     mongo_init()
     try:
