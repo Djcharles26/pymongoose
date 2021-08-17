@@ -209,7 +209,7 @@ class Schema(object):
 					Logger.printError(f"key {key} has an incorrect type") 
 				return False
 		elif type == Types.Date:
-			if item_type is datetime:
+			if "datetime.datetime" in str(item_type):
 				return True
 			else:
 				if methods.debug_log:
