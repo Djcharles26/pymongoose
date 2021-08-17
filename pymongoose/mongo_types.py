@@ -251,7 +251,10 @@ class Schema(object):
 					Logger.printWarn(f"key={k} in schema doesn't contain any type, returning True")
 				retval = True
 
-			if not retval: return retval
+			if not retval:
+				if methods.debug_log:
+					Logger.printError(f"key={k} in schema doesn't contain correct type")
+				return retval
 
 		return True
 
