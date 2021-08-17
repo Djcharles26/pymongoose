@@ -1,2 +1,3 @@
 ## Minor updates
-- Corrected debug_log set variable
+- Corrected exists method
+- Added more logs in check validations of required and types
