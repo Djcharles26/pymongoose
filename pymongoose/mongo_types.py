@@ -333,7 +333,7 @@ class Schema(object):
 
 	@classmethod
 	def exists(cls, query):
-		retval = methods.exists(cls.collection, query)
+		retval = methods.exists(cls.schema_name, query)
 		return retval
 
 	@classmethod
