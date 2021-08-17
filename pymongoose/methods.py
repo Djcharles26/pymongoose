@@ -30,7 +30,7 @@ def set_schemas(db, schemas_re, _debug_log_=True):
     global debug_log
     database = db
     schemas = schemas_re
-    _debug_log_ = debug_log
+    debug_log = _debug_log_
     if debug_log:
         Logger.set_terminal_color("blue")
         print("MongoDB Schemas: ")
