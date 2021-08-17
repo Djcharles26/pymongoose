@@ -42,20 +42,20 @@ def get_schema_by_name(name:str) -> dict:
         return schemas[name]
     else: return None
 
-def exists(collection, query):
+def exists(schema, query):
     """
 	Check if document exists in collection
 	# Parameters
 	------------
-	### collection: Mongo collection
-		Mongo collection where query will be executed
+	### schema: Mongo collection name
+		Mongo collection name where query will be executed
     ### query: dict
         Dictionary containing query
     # Returns
     ------------
     - boolean
 	"""
-    return collection.count_documents(query, limit = 1) > 0
+    return database[schema].count_documents(query, limit = 1) > 0
 
 def _get_clean_schema(schema, pop):
     isList = False

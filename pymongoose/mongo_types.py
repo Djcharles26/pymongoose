@@ -235,6 +235,12 @@ class Schema(object):
 					retval = self._item_type_check(last_key, scAux["type"], type(item))
 			else:
 				retval = self._item_type_check(last_key, scAux["type"], type(json_obj))
+
+			if methods.debug_log:
+				if retval:
+					Logger.printSuccess(f"(type) key={last_key} in schema has a correct value type")
+				else:
+					Logger.printError(f"(type) key={last_key} in schema has an incorrect value type")
 			return retval
 					
 
@@ -248,13 +254,16 @@ class Schema(object):
 				retval = self.validate_type(json_obj[k], scAux[k], last_key=k)
 			else:
 				if methods.debug_log:
-					Logger.printWarn(f"key={k} in schema doesn't contain any type, returning True")
+					Logger.printWarn(f"(type) key={k} in schema doesn't contain any type, returning True")
 				retval = True
 
 			if not retval:
 				if methods.debug_log:
-					Logger.printError(f"key={k} in schema doesn't contain correct type")
+					Logger.printError(f"(type) key={k} in schema has an incorrect value type")
 				return retval
+			
+			if methods.debug_log:
+					Logger.printSuccess(f"(type) key={k} in schema has a correct value type")
 
 		return True
 
@@ -285,12 +294,12 @@ class Schema(object):
 				retval = self.validate_required(json_obj[k], scAux[k])
 			else:
 				if methods.debug_log:
-					Logger.printLog(f"key={k} doesn't contain required value, setting by default in False")
+					Logger.printLog(f"(req) key={k} doesn't contain required value, setting by default in False")
 				retval = True
 
 			if retval:
 				if methods.debug_log:
-					Logger.printSuccess(f"key '{k}' has a valid argument")
+					Logger.printSuccess(f"(req) key '{k}' has a valid argument")
 
 			if not retval: return retval
 
@@ -333,7 +342,7 @@ class Schema(object):
 
 	@classmethod
 	def exists(cls, query):
-		retval = methods.exists(cls.collection, query)
+		retval = methods.exists(cls.schema_name, query)
 		return retval
 
 	@classmethod
