@@ -223,18 +223,10 @@ class Schema(object):
 					Logger.printError(f"key {key} has an incorrect type") 
 				return False
 
-	def validate_type(self, json_obj: dict, sc=schema, last_key = None) -> bool:
-		scAux = sc
-		if type(sc) is list:
-			scAux = sc[0]
+	def _validate_type_cycle(self, scAux, json_obj, last_key):
 
 		if "type" in scAux:
-			retval = True
-			if type(json_obj) is list:
-				for item in json_obj:
-					retval = self._item_type_check(last_key, scAux["type"], type(item))
-			else:
-				retval = self._item_type_check(last_key, scAux["type"], type(json_obj))
+			retval = self._item_type_check(last_key, scAux["type"], type(json_obj))
 
 			if methods.debug_log:
 				if retval:
@@ -267,19 +259,33 @@ class Schema(object):
 
 		return True
 
-	def validate_required(self, json_obj: dict, sc=schema) -> bool:
-		"""
-		Check if current schema object contains all required fields dicted by schema
-		# Parameters:
-		------------
-		- json_obj: dict
-		Dictionary where it will be looked
-		# Returns: bool
-		"""
+	def validate_type(self, json_obj: dict, sc=schema, last_key = None) -> bool:
 		scAux = sc
+		is_list = False
 		if type(sc) is list:
 			scAux = sc[0]
+			is_list = True
 
+		retval = False
+		if is_list:
+			for i, obj in enumerate(json_obj):
+				retval = self._validate_type_cycle(scAux, obj, last_key)
+
+				if retval:
+					if methods.debug_log:
+						Logger.printSuccess(f"(type) key '{last_key}-{i}' has a valid type")
+				else:
+					return False
+
+		else:
+			retval = self._validate_type_cycle(scAux, json_obj, last_key)
+
+		return retval
+		
+
+		
+
+	def _validate_required_cycle(self, scAux, json_obj) -> bool:
 		if "required" in scAux:
 			return json_obj is not None
 
@@ -291,7 +297,7 @@ class Schema(object):
 				else:
 					retval = True
 			elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
-				retval = self.validate_required(json_obj[k], scAux[k])
+				retval = self.validate_required(json_obj[k], scAux[k], k)
 			else:
 				if methods.debug_log:
 					Logger.printLog(f"(req) key={k} doesn't contain required value, setting by default in False")
@@ -301,9 +307,43 @@ class Schema(object):
 				if methods.debug_log:
 					Logger.printSuccess(f"(req) key '{k}' has a valid argument")
 
-			if not retval: return retval
+			if not retval: 
+				if methods.debug_log:
+					Logger.printError(f"(req) key '{k}'' is required but values doesn't come")
+				return retval
 
-		return True
+		return retval
+
+	def validate_required(self, json_obj: dict, sc=schema, last_key="") -> bool:
+		"""
+		Check if current schema object contains all required fields dicted by schema
+		# Parameters:
+		------------
+		- json_obj: dict
+		Dictionary where it will be looked
+		# Returns: bool
+		"""
+		scAux = sc
+		is_list = False
+		if type(sc) is list:
+			scAux = sc[0]
+			is_list = True
+
+		retval = False
+		if is_list:
+			for i, obj in enumerate(json_obj):
+				retval = self._validate_required_cycle(scAux, obj)
+
+				if retval:
+					if methods.debug_log:
+						Logger.printSuccess(f"(req) key '{last_key}-{i}' has a valid argument")
+				else:
+					return False
+
+		else:
+			retval = self._validate_required_cycle(scAux, json_obj)
+
+		return retval
 			
 	def get_default_value(self, name, kwargs):
 		"""
