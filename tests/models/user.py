@@ -17,6 +17,7 @@ class User(Schema):
     name = None
     username = None
     role = None
+    date = None
 
     def __init__(self, **kwargs):
         self.schema = {
@@ -31,6 +32,10 @@ class User(Schema):
             "role" : {
                 "type": Types.ObjectId,
                 "ref": "roles"
+            },
+            "date": {
+                "type": Types.Date,
+                "default": datetime.datetime.now()
             }
         }
 
