@@ -3,6 +3,7 @@ import signal
 from pymongo import MongoClient
 from pymongoose.methods import set_schemas, get_cursor_length
 from models.user import User
+from models.complex_model import Complex
 from models.role import Role
 
 
@@ -21,7 +22,8 @@ def mongo_init ():
 
         schemas = {
             "users": User(empty=True).schema,
-            "roles": Role(empty=True).schema
+            "roles": Role(empty=True).schema,
+            "complexs": Complex(empty=True).schema
         }
 
         set_schemas(db, schemas)
@@ -68,11 +70,51 @@ def test_insert():
 
         users.append(userA)
         users.append(userB)
+    except:
+        traceback.print_exc()
+        raise Exception("Users insertion failed")
+
+    try:
+        complex = Complex(
+            name="Test",
+            elements=[
+                {
+                    "id": 0,
+                    "values": [{
+                        "desc": "hola12",
+                        "colors": [
+                            {
+                                "name": "Red",
+                                "code": 1
+                            },
+                            {
+                                "name": "Green",
+                                "code": 2
+                            }
+                        ]
+                    }]
+                },
+                {
+                    "id": 1,
+                    "values": [{
+                        "desc": "adios12",
+                        "colors": [
+                            {
+                                "name": "Blue",
+                                "code": 2
+                            }
+                        ]
+                    }]
+                }
+            ]
+        )
+
+        complex.save()
         print("Insert exit with code 0")
         return 0
     except:
         traceback.print_exc()
-        raise Exception("Users insertion failed")
+        raise Exception ("Complexs insertion failed")
 
 def test_find():
     mongo_init()
