@@ -193,7 +193,12 @@ class Schema(object):
 			return True if type(value) is datetime.datetime else False
 		else: return True
 
-	def _item_type_check(self, key, type, item_type): 
+	def _item_type_check(self, key, type, item_type):
+		if item_type == None or item_type == dict:
+			if methods.debug_log:
+				Logger.printLog(f"key {key} doesn't come in json, returning True")
+			return True
+
 		if type == Types.Number:
 			if item_type is int or item_type is float:
 				return True
@@ -226,7 +231,8 @@ class Schema(object):
 	def _validate_type_cycle(self, scAux, json_obj, last_key):
 
 		if "type" in scAux:
-			retval = self._item_type_check(last_key, scAux["type"], type(json_obj))
+			tp = type(json_obj) if json_obj is not None else None
+			retval = self._item_type_check(last_key, scAux["type"], tp)
 
 			if methods.debug_log:
 				if retval:
@@ -234,30 +240,39 @@ class Schema(object):
 				else:
 					Logger.printError(f"(type) key={last_key} in schema has an incorrect value type")
 			return retval
-					
 
+		retval = True
 		for k in scAux:
 			retval = True
-			if "type" in scAux[k]:
-				tp = type(json_obj[k])
-				retval = self._item_type_check(k, scAux[k]["type"], tp)
+			if type(scAux[k]) is dict or type(scAux[k]) is list:
+				if "type" in scAux[k]:
+					tp = type(json_obj[k]) if k in json_obj and json_obj[k] is not None else None
+					retval = self._item_type_check(k, scAux[k]["type"], tp)
+					
+				elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
+					retval = self.validate_type(
+						json_obj[k] if k in json_obj and json_obj[k] is not None else
+							[{}] if type(scAux[k]) is list else {},
+						scAux[k], 
+						k
+					)
+				else:
+					if methods.debug_log:
+						Logger.printWarn(f"(type) key={k} in schema doesn't contain any type, returning True")
+					retval = True
+
+				if not retval:
+					if methods.debug_log:
+						Logger.printError(f"(type) key={k} in schema has an incorrect value type")
+					return retval
 				
-			elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
-				retval = self.validate_type(json_obj[k], scAux[k], last_key=k)
+				if methods.debug_log:
+						Logger.printSuccess(f"(type) key={k} in schema has a correct value type")
 			else:
 				if methods.debug_log:
-					Logger.printWarn(f"(type) key={k} in schema doesn't contain any type, returning True")
-				retval = True
-
-			if not retval:
-				if methods.debug_log:
-					Logger.printError(f"(type) key={k} in schema has an incorrect value type")
-				return retval
+					Logger.printWarn(f"(type) key={k} schema is not a dict, returning True")
 			
-			if methods.debug_log:
-					Logger.printSuccess(f"(type) key={k} in schema has a correct value type")
-
-		return True
+		return retval
 
 	def validate_type(self, json_obj: dict, sc=schema, last_key = None) -> bool:
 		scAux = sc
@@ -291,26 +306,35 @@ class Schema(object):
 
 		for k in scAux:
 			retval = True
-			if "required" in scAux[k]:
-				if not k in json_obj or json_obj[k] is None:
-					return False
+			if type(scAux[k]) is dict or type(scAux[k]) is list:
+				if "required" in scAux[k]:
+					if not k in json_obj or json_obj[k] is None:
+						return False
+					else:
+						retval = True
+				elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
+						retval = self.validate_required(
+							json_obj[k] if k in json_obj and json_obj[k] is not None else
+								[{}] if type(scAux[k]) is list else {}, 
+							scAux[k], 
+							k
+						)
 				else:
+					if methods.debug_log:
+						Logger.printLog(f"(req) key={k} doesn't contain required value, setting by default in False")
 					retval = True
-			elif type(scAux[k]) is list or dict in list(map(type, scAux[k].values())):
-				retval = self.validate_required(json_obj[k], scAux[k], k)
+
+				if retval:
+					if methods.debug_log:
+						Logger.printSuccess(f"(req) key '{k}' has a valid argument")
+
+				if not retval: 
+					if methods.debug_log:
+						Logger.printError(f"(req) key '{k}' is required but value doesn't come")
+					return retval
 			else:
 				if methods.debug_log:
-					Logger.printLog(f"(req) key={k} doesn't contain required value, setting by default in False")
-				retval = True
-
-			if retval:
-				if methods.debug_log:
-					Logger.printSuccess(f"(req) key '{k}' has a valid argument")
-
-			if not retval: 
-				if methods.debug_log:
-					Logger.printError(f"(req) key '{k}'' is required but values doesn't come")
-				return retval
+					Logger.printLog(f"(req) key={k} current schema isn't a dict, setting by default in False")
 
 		return retval
 
