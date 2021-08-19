@@ -296,9 +296,6 @@ class Schema(object):
 			retval = self._validate_type_cycle(scAux, json_obj, last_key)
 
 		return retval
-		
-
-		
 
 	def _validate_required_cycle(self, scAux, json_obj) -> bool:
 		if "required" in scAux:
@@ -368,7 +365,7 @@ class Schema(object):
 			retval = self._validate_required_cycle(scAux, json_obj)
 
 		return retval
-			
+		
 	def get_default_value(self, name, kwargs):
 		"""
 		Wrapper function for parse_schema_value
