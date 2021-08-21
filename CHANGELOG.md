@@ -1,2 +1,3 @@
 ## Minor updates
-- Updated type and required validations inside mongo documents
+- Added validation if an array is empty in validate required
+- Added validation if an array is empty in validate type
