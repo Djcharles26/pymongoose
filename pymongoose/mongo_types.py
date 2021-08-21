@@ -283,14 +283,17 @@ class Schema(object):
 
 		retval = False
 		if is_list:
-			for i, obj in enumerate(json_obj):
-				retval = self._validate_type_cycle(scAux, obj, last_key)
+			if len(json_obj) == 0:
+				retval = self._validate_type_cycle(scAux, {}, last_key)
+			else:
+				for i, obj in enumerate(json_obj):
+					retval = self._validate_type_cycle(scAux, obj, last_key)
 
-				if retval:
-					if methods.debug_log:
-						Logger.printSuccess(f"(type) key '{last_key}-{i}' has a valid type")
-				else:
-					return False
+					if retval:
+						if methods.debug_log:
+							Logger.printSuccess(f"(type) key '{last_key}-{i}' has a valid type")
+					else:
+						return False
 
 		else:
 			retval = self._validate_type_cycle(scAux, json_obj, last_key)
@@ -352,14 +355,17 @@ class Schema(object):
 
 		retval = False
 		if is_list:
-			for i, obj in enumerate(json_obj):
-				retval = self._validate_required_cycle(scAux, obj)
+			if len(json_obj) == 0:
+				retval = self._validate_required_cycle(scAux, {})
+			else:
+				for i, obj in enumerate(json_obj):
+					retval = self._validate_required_cycle(scAux, obj)
 
-				if retval:
-					if methods.debug_log:
-						Logger.printSuccess(f"(req) key '{last_key}-{i}' has a valid argument")
-				else:
-					return False
+					if retval:
+						if methods.debug_log:
+							Logger.printSuccess(f"(req) key '{last_key}-{i}' has a valid argument")
+					else:
+						return False
 
 		else:
 			retval = self._validate_required_cycle(scAux, json_obj)
