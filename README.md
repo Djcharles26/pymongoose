@@ -116,7 +116,12 @@ This will return a cursor of elements, which can be parsed into User model for a
 ```python
 user = User.find({}, one=True)
 ```
-This will return a User element with fields obtained by database
+This will return a User element with fields obtained by database, if you prefer a json just add 
+```python
+parse = False
+```
+At last of the **find** statement.
+
 ### Find by id function:
 ```python
 # this Function will search for "_id" field 
@@ -126,7 +131,11 @@ user = User.find_by_id(id)
 user = User.find_by_id(id, select={"name": 1, "username": 1})
 # For a custom user
 ```
-This will return a User element with fields obtained by database
+This will return a User element with fields obtained by database, if you prefer a json just add 
+```python
+parse = False
+```
+At last of the **find** statement.
 
 ### Populate a search:
 ```python
