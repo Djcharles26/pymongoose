@@ -92,9 +92,13 @@ class Schema(object):
 	
 	def fromJson(self, json_obj):
 		for key in self.schema.keys():
+			if methods.debug_log:
+				Logger.printLog(f"Setting {key}")
 			setattr(self, key, self.get_default_value(key, json_obj))
 			
-		self.id = self.extract("_id", json_obj)
+		if methods.debug_log:
+			Logger.printLog(f"Setting _id")
+		self.id = self.get_default_value("_id", json_obj)
 
 	def toJson (self, full=True):
 		"""
@@ -227,6 +231,13 @@ class Schema(object):
 				if methods.debug_log:
 					Logger.printError(f"key {key} has an incorrect type") 
 				return False
+		elif type == Types.Boolean:
+			if item_type is bool:
+				return True
+			else:
+				if methods.debug_log:
+					Logger.printError(f"key {key} has an incorrect type")
+				return False
 
 	def _validate_type_cycle(self, scAux, json_obj, last_key):
 
@@ -301,14 +312,16 @@ class Schema(object):
 		return retval
 
 	def _validate_required_cycle(self, scAux, json_obj) -> bool:
-		if "required" in scAux:
+		if "required" in scAux and scAux["required"]:
 			return json_obj is not None
 
 		for k in scAux:
 			retval = True
 			if type(scAux[k]) is dict or type(scAux[k]) is list:
-				if "required" in scAux[k]:
+				if "required" in scAux[k] and scAux[k]["required"]:
 					if not k in json_obj or json_obj[k] is None:
+						if methods.debug_log:
+							Logger.printError(f"(req) key '{k}' is required but value doesn't come")
 						return False
 					else:
 						retval = True
