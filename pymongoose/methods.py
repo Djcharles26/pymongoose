@@ -129,10 +129,6 @@ def _populate(schema, populate, aggregate, parent=""):
                 
                 pipeline.append({"$project": project})
 
-            if "match" in pop:
-                pipeline.append({"$match": pop["match"]})
-            
-
             e = {
                 "$lookup": {
                     "from": aux_schema["ref"],
@@ -149,6 +145,9 @@ def _populate(schema, populate, aggregate, parent=""):
                 "preserveNullAndEmptyArrays": True
             }
             aggregate.append({"$unwind": unwind})
+
+            if "match" in pop:
+                aggregate.append({"$match": {f"{parent}{pop['path']}.{k}": v for k, v in pop["match"].items()}})
 
             wL = False
 
@@ -420,7 +419,7 @@ def update(schema, query, update, many = False):
             retval = database[schema].update_many(query, update)
             return retval.modified_count
     except:
-        raise MongoException(sys.exc_info()[0],  message="Error updating document(s)", mongoError=MongoError.Bad_actio)
+        raise MongoException(sys.exc_info()[0],  message="Error updating document(s)", mongoError=MongoError.Bad_action)
 
 def delete(schema, query, many = False):
     """
