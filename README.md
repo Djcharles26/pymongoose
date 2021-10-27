@@ -102,7 +102,7 @@ user = User(
 )
 id = user.save()
 ```
-user.save() will throw an exception if a field marked as required in schema is **None**
+user.save() will throw an exception if a field marked as required in schema is **None**.
 
 ### Find function:
 ```python
@@ -110,7 +110,7 @@ users = User.find({})
 for user in users:
     user = User.parse(user)
 ```
-This will return a cursor of elements, which can be parsed into User model for a better management
+This will return a cursor of elements, which can be parsed into User model for a better management.
 
 ### Find one function:
 ```python
@@ -244,6 +244,16 @@ Pymongoose can recursively populate fields like this:
 This will return a CursorCommand element
 
 In this example all menus populate each item of their array, at same time element dish and drink are populated, returning a complete array of populated menus with populated items.
+
+## Parsed finds:
+**pymongoose** has the ability to parse the return cursor as different types:
+Available types are
+    - IF **AS_DEFAULT(0)**, will return cursor if one == False, else a dict if parse == False
+    - IF **AS_DICT(1)**, will return a list of dicts if one == False, else as serializable dict
+    - IF **AS_STRING(2)**, will return a parsed list of dicts as str if one == False, else as a str parsed serializable dict
+
+*Note: In case you don't need a serializable dict, left cursor **AS_DEFAULT**
+
 
 ## Update item:
 ```python
