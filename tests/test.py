@@ -2,6 +2,7 @@ import os, traceback
 import signal 
 from pymongo import MongoClient
 from pymongoose.methods import set_schemas, get_cursor_length
+from pymongoose.methods import AS_DICT, AS_STRING
 from models.user import User
 from models.complex_model import Complex
 from models.role import Role
@@ -131,6 +132,36 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
+def test_find_dict():
+    mongo_init()
+    try:
+        users = User.find({}, cursor=AS_DICT)
+        if users is None or type(users) is not list:
+            return 1
+
+        print("Find exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_string():
+    mongo_init()
+    try:
+        users = User.find({}, cursor=AS_STRING)
+        if users is None or type(users) is not str:
+            return 1
+
+        print("Find exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
 def test_find_check_none():
     mongo_init()
     try:
@@ -207,6 +238,34 @@ def test_find_by_id():
         user = User.find_by_id(users[0].id)
 
         if user is None:
+            raise Exception("No user was found!")
+            return 1
+
+        print("Find by id exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding")
+        return 1
+
+def test_find_by_id_dict():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, cursor=AS_DICT, parse=False)
+        if user is None or type(user) is not dict:
+            raise Exception("No user was found!")
+            return 1
+
+        print("Find by id exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding")
+        return 1
+
+def test_find_by_id_string():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, cursor=AS_STRING, parse=False)
+        if user is None or type(user) is not str:
             raise Exception("No user was found!")
             return 1
 
@@ -345,8 +404,12 @@ def test_delete_many():
 
 # test_insert()
 # test_find()
+# test_find_dict()
+# test_find_string()
 # test_find_sort()
 # test_find_by_id()
+# test_find_by_id_dict()
+# test_find_by_id_string()
 # test_find_one()
 # test_find_check_none()
 # test_find_skip()
