@@ -2,6 +2,7 @@ import os, traceback
 import signal 
 from pymongo import MongoClient
 from pymongoose.methods import set_schemas, get_cursor_length
+from pymongoose.methods import AS_DICT, AS_STRING
 from models.user import User
 from models.complex_model import Complex
 from models.role import Role
@@ -131,11 +132,85 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
+def test_find_dict():
+    mongo_init()
+    try:
+        users = User.find({}, cursor=AS_DICT)
+        if users is None or type(users) is not list:
+            return 1
+
+        print("Error finding as dict")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_string():
+    mongo_init()
+    try:
+        users = User.find({}, cursor=AS_STRING)
+        if users is None or type(users) is not str:
+            print("Error finding as string")
+            return 1
+
+        print("Find exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_check_none():
+    mongo_init()
+    try:
+        user = User.find({"name": "This_user_doesnt_exists"}, one=True)
+        if user is not None:
+            return 1
+
+        print("Find check none exit with code 0")
+        return 0
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_skip():
+    mongo_init()
+    try:
+        users = User.find({}, skip=1)
+        if users is None or (users.count() > 1 and users.count() == 0):
+            return 1
+
+        print("Find skip exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_limit():
+    mongo_init()
+    try:
+        users = User.find({}, limit=1)
+        if users is None or (users.count() > 1 and users.count() == 0):
+            return 1
+
+        print("Find limit exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
 def test_find_sort():
     mongo_init()
     try:
         users = User.find({}, sort={"name": -1})
-        print(users.count())
         if users is None or users.count() == 0:
             return 1
 
@@ -173,12 +248,68 @@ def test_find_by_id():
         raise Exception("Error finding")
         return 1
 
+def test_find_by_id_dict():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, cursor=AS_DICT, parse=False)
+        if user is None or type(user) is not dict:
+            raise Exception("No user was found!")
+            return 1
+
+        print("Find by id exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding as dict")
+        return 1
+
+def test_find_by_id_string():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, cursor=AS_STRING, parse=False)
+        if user is None or type(user) is not str:
+            raise Exception("No user was found!")
+            return 1
+
+        print("Find by id exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding as string")
+        return 1
+
 def test_find_one():
     mongo_init()
     try:
         user = User.find({"name": "TestA"}, one=True)
         
         if user is None:
+            raise Exception("No one user found")
+            return 1
+        print("Find one exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding")
+        return 1
+
+def test_find_one_dict():
+    mongo_init()
+    try:
+        user = User.find({"name": "TestA"}, one=True, parse=False, cursor=AS_DICT)
+        
+        if user is None or type(user) is not dict:
+            raise Exception("No one user found")
+            return 1
+        print("Find one exit with code 0")
+        return 0
+    except:
+        raise Exception("Error finding")
+        return 1
+
+def test_find_one_string():
+    mongo_init()
+    try:
+        user = User.find({"name": "TestA"}, one=True, parse=False, cursor=AS_STRING)
+        
+        if user is None or type(user) is not str:
             raise Exception("No one user found")
             return 1
         print("Find one exit with code 0")
@@ -240,6 +371,36 @@ def test_populate():
         traceback.print_exc()
         return 1
 
+def test_populate_dict():
+    mongo_init()
+    try:
+        user = User.find({}, populate=["role"], cursor=AS_DICT)
+
+        if user is None or type(user) is not list:
+            raise Exception("No users where returned after populate")
+            return 1
+        print("find populated exit with code 0")
+        return 0
+    except:
+        raise Exception("Error populating dict")
+        traceback.print_exc()
+        return 1
+
+def test_populate_string():
+    mongo_init()
+    try:
+        user = User.find({}, populate=["role"], cursor=AS_STRING)
+
+        if user is None or type(user) is not str:
+            raise Exception("No users where returned after populate")
+            return 1
+        print("find populated exit with code 0")
+        return 0
+    except:
+        raise Exception("Error populating string")
+        traceback.print_exc()
+        return 1
+
 def test_populate_one():
     mongo_init()
     try:
@@ -252,6 +413,23 @@ def test_populate_one():
         return 0
     except:
         raise Exception("Error populating one")
+        return 1
+
+def test_populate_with_match():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, populate=[{
+            "path": "role",
+            "match": {"name": "common"}
+        }])
+
+        if user is None:
+            raise Exception("No user was populated")
+            return 1
+        print("Find one populated exit with code 0")
+        return 0
+    except:
+        raise Exception("Error populating one with match")
         return 1
 
 def test_delete_one():
@@ -285,12 +463,24 @@ def test_delete_many():
 
 # test_insert()
 # test_find()
+# test_find_dict()
+# test_find_string()
 # test_find_sort()
 # test_find_by_id()
+# test_find_by_id_dict()
+# test_find_by_id_string()
 # test_find_one()
+# test_find_one_dict()
+# test_find_one_string()
+# test_find_check_none()
+# test_find_skip()
+# test_find_limit()
+# test_populate_with_match()
 # test_update()
 # test_update_one()
 # test_populate()
+# test_populate_dict()
+# test_populate_string()
 # test_populate_one()
 # test_delete_one()
 # test_delete_many()
