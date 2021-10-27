@@ -131,11 +131,54 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
+def test_find_check_none():
+    mongo_init()
+    try:
+        user = User.find({"name": "This_user_doesnt_exists"}, one=True)
+        if user is not None:
+            return 1
+
+        print("Find check none exit with code 0")
+        return 0
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_skip():
+    mongo_init()
+    try:
+        users = User.find({}, skip=1)
+        if users is None or (users.count() > 1 and users.count() == 0):
+            return 1
+
+        print("Find skip exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
+def test_find_limit():
+    mongo_init()
+    try:
+        users = User.find({}, limit=1)
+        if users is None or (users.count() > 1 and users.count() == 0):
+            return 1
+
+        print("Find limit exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
 def test_find_sort():
     mongo_init()
     try:
         users = User.find({}, sort={"name": -1})
-        print(users.count())
         if users is None or users.count() == 0:
             return 1
 
@@ -254,6 +297,23 @@ def test_populate_one():
         raise Exception("Error populating one")
         return 1
 
+def test_populate_with_match():
+    mongo_init()
+    try:
+        user = User.find_by_id(users[0].id, populate=[{
+            "path": "role",
+            "match": {"name": "common"}
+        }])
+
+        if user is None:
+            raise Exception("No user was populated")
+            return 1
+        print("Find one populated exit with code 0")
+        return 0
+    except:
+        raise Exception("Error populating one with match")
+        return 1
+
 def test_delete_one():
     mongo_init()
     try:
@@ -288,6 +348,10 @@ def test_delete_many():
 # test_find_sort()
 # test_find_by_id()
 # test_find_one()
+# test_find_check_none()
+# test_find_skip()
+# test_find_limit()
+# test_populate_with_match()
 # test_update()
 # test_update_one()
 # test_populate()
