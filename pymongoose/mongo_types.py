@@ -483,7 +483,7 @@ class Schema(object):
 			Logger.printLog(cls.schema_name)
 		retval = methods.find(cls.schema_name, query, select, populate, one, skip, limit, sort)
 		if one:
-			retval = cls.parse(retval) if parse else retval
+			retval = cls.parse(retval) if parse and retval is not None else retval
 		return retval
 
 	@classmethod
@@ -510,7 +510,7 @@ class Schema(object):
 		"""
 		retval = methods.find_by_id(cls.schema_name, id, select, populate)
 		
-		return cls.parse(retval) if parse else retval
+		return cls.parse(retval) if parse and retval is not None else retval
 
 	@classmethod
 	def aggregate(cls, aggregate):
