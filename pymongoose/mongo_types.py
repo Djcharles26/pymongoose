@@ -7,6 +7,9 @@ from pymongoose import methods
 from bson import ObjectId
 import json
 
+AS_DEFAULT = 0
+AS_DICT = 1
+AS_STRING = 2
 
 class Types(Enum):
 	"""
@@ -443,7 +446,10 @@ class Schema(object):
 		return retval
 
 	@classmethod
-	def find(cls, query, select = None, populate=None, one=False, skip = 0, limit=None, sort=None, parse=True):
+	def find(
+		cls, query, select = None, populate=None, one=False, 
+		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT
+	):
 		"""
 		Find a document inside a collection
 		# Parameters
@@ -471,23 +477,36 @@ class Schema(object):
 		### parse: bool
 			If one is True, then document could be parsed and returned as a Schema object
 			defaults to: True
+		### cursor: int
+			If cursor is not AS_DEFAULT(0), will give it a special traitment
+			- IF AS_DICT(1), will return a list of dicts if one == False, else as serializable dict
+			- IF AS_STRING(2), will return a parsed list of dicts as str if one == False, else as a str parsed serializable dict
+			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
+			defaults to: AS_DEFAULT (0)
 		# Returns
 		------------
 		- Cursor -> one == False, populate == None
 		- CommandCursor -> populate != None
-		- dict -> one == True, parse = False
+		- dict -> one == True, parse == False
 		- Schema object -> one == True, parse == True
+		- list -> cursor == AS_DICT, one == False
+		- str -> cursor == AS_STRING, one == False
 		- None -> not found
 		"""
 		if methods.debug_log:
 			Logger.printLog(cls.schema_name)
 		retval = methods.find(cls.schema_name, query, select, populate, one, skip, limit, sort)
-		if one:
-			retval = cls.parse(retval) if parse and retval is not None else retval
+		if one and parse:
+			retval = cls.parse(retval) if retval is not None else retval
+		elif cursor == AS_DICT:
+			# if type(retval) is dict:
+			retval = json.loads(json_util.dumps(retval))
+		elif cursor == AS_STRING:
+			retval = json_util.dumps(retval)
 		return retval
 
 	@classmethod
-	def find_by_id(cls, id, select = None, populate=None, parse=True):
+	def find_by_id(cls, id, select = None, populate=None, parse=True, cursor=AS_DEFAULT):
 		"""
 		Find a document inside a collection by id
 		# Parameters
@@ -503,14 +522,28 @@ class Schema(object):
 		### parse: bool
 			If true, document will be returned as an Schema Object
 			defaults to: True
+		### cursor: int
+			If cursor is not AS_DEFAULT(0), will give it a special traitment
+			- IF AS_DICT(1), will return a serializable dict
+			- IF AS_STRING(2), will return a str parsed serializable dict
+			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
+			defaults to: AS_DEFAULT (0)
 		# Returns
 		------------
 		- dict -> parse = False
 		- Schema object -> parse = True 
 		"""
 		retval = methods.find_by_id(cls.schema_name, id, select, populate)
+
+		if parse:
+			retval = cls.parse(retval) if retval is not None else retval
+		elif cursor == AS_DICT:
+			retval = json_util.dumps(retval)
+			retval = json.loads(retval)
+		elif cursor == AS_STRING:
+			retval = json_util.dumps(retval)
 		
-		return cls.parse(retval) if parse and retval is not None else retval
+		return retval
 
 	@classmethod
 	def aggregate(cls, aggregate):
