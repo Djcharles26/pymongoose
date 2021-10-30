@@ -307,6 +307,13 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
                     "$project": select
                 })
 
+            if(sort is not None):
+                aggregate.append({
+                    "$sort": {
+                        f"{sort_key}": sort_value
+                    }
+                })
+
             if(skip > 0):
                 aggregate.append({
                     "$skip": skip
@@ -317,13 +324,6 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
                     "$limit": limit
                 })
 
-            if(sort is not None):
-                aggregate.append({
-                    "$sort": {
-                        f"{sort_key}": sort_value
-                    }
-                })
-            
 
             retval = database[schema_name].aggregate(aggregate)
 
@@ -421,7 +421,7 @@ def update(schema, query, update, many = False):
     except:
         raise MongoException(sys.exc_info()[0],  message="Error updating document(s)", mongoError=MongoError.Bad_action)
 
-def delete(schema, query, many = False):
+def delete(schema, query, many = False, cascade=False):
     """
 	Delete documents inside collection
 	# Parameters
@@ -433,6 +433,9 @@ def delete(schema, query, many = False):
     ### many: bool
         Variable to select if delete one ore many
         defaults to: False
+    ### cascade: bool
+        Variable to delete all items related with this object id
+        defaults to False
     # Returns
     ------------
     - number of documents deleted
@@ -445,6 +448,8 @@ def delete(schema, query, many = False):
             retval = database[schema].delete_many(query)
             return retval.deleted_count
         else:
+            if(cascade):
+                id = database[schema].find_one(query, {"_id": 1})
             database[schema].delete_one(query)
             return 1
     except:
