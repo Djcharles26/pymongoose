@@ -1,2 +1,2 @@
 ## Minor updates
-- Changed skip, limit and sort order in find when populate is not None
+- Updated how populate groups and replace roots works when parent of path contains dots (are objects)
