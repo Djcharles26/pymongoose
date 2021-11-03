@@ -168,11 +168,15 @@ def _populate(schema, populate, aggregate, parent=""):
                 _id = {}
 
                 parentAux = parent
+                parentRoot = parentAux
+                if(parentAux.find(".") > 0):
+                    parentRoot = parentAux.split(".")[0]
+
                 if len(parent) > 0:
                     parentAux = parent[:-1]
                     _id = {
                         "_id": "$_id",
-                        parentAux: f"${parentAux}._id"
+                        parentRoot: f"${parentAux}._id"
                     }
                 else: 
                     _id = "$_id._id" if wL else "$_id"
@@ -190,13 +194,14 @@ def _populate(schema, populate, aggregate, parent=""):
                 })
 
                 replaceRoot = {}
+                
                 if len(parent) > 0:
                     replaceRoot = {
                         "$mergeObjects": [
                             "$doc",
                             {"_id": "$_id"},
                             {
-                                parentAux: {
+                                parentRoot: {
                                     "$mergeObjects": [f"$doc.{parentAux}", {popAux: f"${popAux}"}]
                                 }
                             }
