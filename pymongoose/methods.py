@@ -77,6 +77,19 @@ def _get_clean_schema(schema, pop):
 
     return aux_schema, isList
 
+def _merge_objects(parentRoot, parentAux, acum, popAux):
+    if(len(parentAux) > 0):
+        p = parentAux.pop(-1)
+        return {
+            parentRoot: {
+                "$mergeObjects": [
+                    f"$doc.{acum}", _merge_objects(p, parentAux, acum + "." + p, popAux)
+                ]
+            }
+        }
+    else:
+        return {popAux: f"${popAux}"}
+
 def _populate(schema, populate, aggregate, parent=""):
     wasList = False
     for pop in populate: #Iterate in each populate object or str
@@ -200,11 +213,7 @@ def _populate(schema, populate, aggregate, parent=""):
                         "$mergeObjects": [
                             "$doc",
                             {"_id": "$_id"},
-                            {
-                                parentRoot: {
-                                    "$mergeObjects": [f"$doc.{parentAux}", {popAux: f"${popAux}"}]
-                                }
-                            }
+                            _merge_objects(parentRoot, parentAux.split("."), parentRoot, popAux)
                         ]
                     }
                 else:
