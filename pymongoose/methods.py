@@ -1,3 +1,4 @@
+from dataclasses import replace
 import sys
 from pymongo import DESCENDING, ASCENDING
 from bson.objectid import ObjectId
@@ -90,7 +91,7 @@ def _merge_objects(parentRoot, parentAux, acum, popAux):
     else:
         return {popAux: f"${popAux}"}
 
-def _populate(schema, populate, aggregate, parent=""):
+def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
     wasList = False
     for pop in populate: #Iterate in each populate object or str
         if type(pop) is not dict: #If is a str is a simple lookup and unwind
@@ -168,7 +169,7 @@ def _populate(schema, populate, aggregate, parent=""):
                 
                 ##Recursively call to function with respectie schema 
 
-                wL = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".") 
+                wL, grouped_times = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".", grouped_times) 
 
             ## If current isList is true
             ## If len(parent) > 0 then current parent should be added in _id else _id = "$_id._id"
@@ -187,12 +188,17 @@ def _populate(schema, populate, aggregate, parent=""):
 
                 if len(parent) > 0:
                     parentAux = parent[:-1]
+
                     _id = {
                         "_id": "$_id",
                         parentRoot: f"${parentAux}._id"
                     }
                 else: 
-                    _id = "$_id._id" if wL else "$_id"
+                    id = "_id." * (grouped_times)
+
+                    id = id [:-1]
+
+                    _id = f"$_id.{id}" if wL else "$_id"
 
                 popAux = pop["path"]
                 if popAux.find(".") > 0:
@@ -201,6 +207,8 @@ def _populate(schema, populate, aggregate, parent=""):
                 group["_id"] = _id
                 group[popAux] = {"$push": f"${parent}{popAux}"}
                 group["doc"] = {"$first": "$$ROOT"}
+
+                grouped_times += 1
 
                 aggregate.append({
                     "$group": group
@@ -232,7 +240,7 @@ def _populate(schema, populate, aggregate, parent=""):
                 })
                 
 
-    return wasList
+    return wasList, grouped_times
 
 def _convert_id_to_object_id(id) -> ObjectId:
     if type(id) is not ObjectId:
@@ -404,7 +412,7 @@ def aggregate(schema, aggregate):
 	"""
     return database[schema].aggregate(aggregate)
 
-def update(schema, query, update, many = False):
+def update(schema, query, update, many = False, complete_response = False):
     """
 	Update a document inside collection
 	# Parameters
@@ -428,10 +436,16 @@ def update(schema, query, update, many = False):
 
         if not many:
             retval = database[schema].update_one(query, update)
-            return retval.modified_count
+            if (complete_response):
+                return retval
+            else:
+                return retval.modified_count
         else:
             retval = database[schema].update_many(query, update)
-            return retval.modified_count
+            if (complete_response):
+                return retval
+            else:
+                return retval.modified_count
     except:
         raise MongoException(sys.exc_info()[0],  message="Error updating document(s)", mongoError=MongoError.Bad_action)
 
