@@ -6,6 +6,7 @@ from pymongoose.methods import AS_DICT, AS_STRING
 from models.user import User
 from models.complex_model import Complex
 from models.role import Role
+from pymongo.cursor import Cursor
 
 
 MONGO_URI = os.environ.get("MONGO_URI")
@@ -35,6 +36,13 @@ def mongo_init ():
         raise Exception("Error initializing database")
 
     return 0
+
+def cursor_size (cursor: Cursor) -> int:
+    if (cursor is None):
+        return 0
+    else:
+        return len (list (cursor))
+
 
 def test_insert():
     global users
@@ -121,7 +129,7 @@ def test_find():
     mongo_init()
     try:
         users = User.find({})
-        if users is None or users.count() == 0:
+        if users is None or len(list(users)) == 0:
             return 1
 
         print("Find exit with code 0")
@@ -181,7 +189,7 @@ def test_find_skip():
     mongo_init()
     try:
         users = User.find({}, skip=1)
-        if users is None or (users.count() > 1 and users.count() == 0):
+        if users is None or (cursor_size (users) > 1 and cursor_size (users) == 0):
             return 1
 
         print("Find skip exit with code 0")
@@ -196,7 +204,7 @@ def test_find_limit():
     mongo_init()
     try:
         users = User.find({}, limit=1)
-        if users is None or (users.count() > 1 and users.count() == 0):
+        if users is None or (cursor_size (users) > 1 and cursor_size (users) == 0):
             return 1
 
         print("Find limit exit with code 0")
@@ -211,7 +219,7 @@ def test_find_sort():
     mongo_init()
     try:
         users = User.find({}, sort={"name": -1})
-        if users is None or users.count() == 0:
+        if users is None or cursor_size (users) == 0:
             return 1
 
         print("Find sorted exit with code 0")
