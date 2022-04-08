@@ -210,36 +210,31 @@ class Schema(object):
 			if item_type is int or item_type is float:
 				return True
 			else:
-				if methods.debug_log:
-					Logger.printError(f"key {key} has an incorrect type") 
+				Logger.printError(f"key {key} has an incorrect type") 
 				return False
 		elif type == Types.String:
 			if item_type is str:
 				return True
 			else:
-				if methods.debug_log:
-					Logger.printError(f"key {key} has an incorrect type") 
+				Logger.printError(f"key {key} has an incorrect type") 
 				return False
 		elif type == Types.Date:
 			if "datetime.datetime" in str(item_type):
 				return True
 			else:
-				if methods.debug_log:
-					Logger.printError(f"key {key} has an incorrect type") 
+				Logger.printError(f"key {key} has an incorrect type") 
 				return False
 		elif type == Types.ObjectId:
 			if item_type is ObjectId:
 				return True
 			else:
-				if methods.debug_log:
-					Logger.printError(f"key {key} has an incorrect type") 
+				Logger.printError(f"key {key} has an incorrect type") 
 				return False
 		elif type == Types.Boolean:
 			if item_type is bool:
 				return True
 			else:
-				if methods.debug_log:
-					Logger.printError(f"key {key} has an incorrect type")
+				Logger.printError(f"key {key} has an incorrect type")
 				return False
 
 	def _validate_type_cycle(self, scAux, json_obj, last_key):
@@ -248,11 +243,12 @@ class Schema(object):
 			tp = type(json_obj) if json_obj is not None else None
 			retval = self._item_type_check(last_key, scAux["type"], tp)
 
-			if methods.debug_log:
-				if retval:
+			if retval:
+				if methods.debug_log:
 					Logger.printSuccess(f"(type) key={last_key} in schema has a correct value type")
-				else:
-					Logger.printError(f"(type) key={last_key} in schema has an incorrect value type")
+			else:
+				Logger.printError(f"(type) key={last_key} in schema has an incorrect value type")
+
 			return retval
 
 		retval = True
@@ -276,12 +272,11 @@ class Schema(object):
 					retval = True
 
 				if not retval:
-					if methods.debug_log:
-						Logger.printError(f"(type) key={k} in schema has an incorrect value type")
+					Logger.printError(f"(type) key={k} in schema has an incorrect value type")
 					return retval
 				
 				if methods.debug_log:
-						Logger.printSuccess(f"(type) key={k} in schema has a correct value type")
+					Logger.printSuccess(f"(ty!pe) key={k} in schema has a correct value type")
 			else:
 				if methods.debug_log:
 					Logger.printWarn(f"(type) key={k} schema is not a dict, returning True")
@@ -323,8 +318,7 @@ class Schema(object):
 			if type(scAux[k]) is dict or type(scAux[k]) is list:
 				if "required" in scAux[k] and scAux[k]["required"]:
 					if not k in json_obj or json_obj[k] is None:
-						if methods.debug_log:
-							Logger.printError(f"(req) key '{k}' is required but value doesn't come")
+						Logger.printError(f"(req) key '{k}' is required but value doesn't come")
 						return False
 					else:
 						retval = True
@@ -345,8 +339,7 @@ class Schema(object):
 						Logger.printSuccess(f"(req) key '{k}' has a valid argument")
 
 				if not retval: 
-					if methods.debug_log:
-						Logger.printError(f"(req) key '{k}' is required but value doesn't come")
+					Logger.printError(f"(req) key '{k}' is required but value doesn't come")
 					return retval
 			else:
 				if methods.debug_log:
@@ -506,6 +499,52 @@ class Schema(object):
 		return retval
 
 	@classmethod
+	def find_one (cls, query, select = None, populate=None, 
+		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT
+	):
+		"""
+		Find one document inside a collection
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		### select: dict
+			Dictionary containing requested fields
+			defaults to: {}
+		### populate: dict
+			Dictionary containing lookup structure of the fields required to populate
+			defaults to: None
+		### skip: int
+			Integer to skip to 'n' values to the left in the collection
+			defaults to: 0
+		### limit: int
+			Integer to limit number of documents returned from the collection
+			defaults to: None
+		### sort: dict
+			Dictionary to set an order of documents based on a field
+			defaults to: None
+		### parse: bool
+			If one is True, then document could be parsed and returned as a Schema object
+			defaults to: True
+		### cursor: int
+			If cursor is not AS_DEFAULT(0), will give it a special traitment
+			- IF AS_DICT(1), will return a list of dicts if one == False, else as serializable dict
+			- IF AS_STRING(2), will return a parsed list of dicts as str if one == False, else as a str parsed serializable dict
+			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
+			defaults to: AS_DEFAULT (0)
+		# Returns
+		------------
+		- Cursor -> one == False, populate == None
+		- CommandCursor -> populate != None
+		- dict -> one == True, parse == False
+		- Schema object -> one == True, parse == True
+		- list -> cursor == AS_DICT, one == False
+		- str -> cursor == AS_STRING, one == False
+		- None -> not found
+		"""
+		return cls.find (query, select, populate, True, skip, limit, sort, parse, cursor)
+
+	@classmethod
 	def find_by_id(cls, id, select = None, populate=None, parse=True, cursor=AS_DEFAULT):
 		"""
 		Find a document inside a collection by id
@@ -561,7 +600,7 @@ class Schema(object):
 		return retval
 
 	@classmethod
-	def update(cls, query, update, many = False):
+	def update(cls, query, update, many = False, complete_response = False):
 		"""
 		Update document(s) inside a collection by query
 		# Parameters
@@ -573,17 +612,36 @@ class Schema(object):
 		### many: bool
 			If True, will modify all documents found with that query
 		defaults to False
+		### complete_response: bool
+			If True, Pymongo Response will be returned, otherwise will return modified_count
+		default to False
 		# Returns
 		------------
 		- int -> Modified count
 		"""
-		retval = methods.update(cls.schema_name, query, update, many)
+		retval = methods.update(cls.schema_name, query, update, many, complete_response)
 		return retval
+
+	@classmethod
+	def update_many(cls, query, update, complete_response = False):
+		"""
+		Update many documents inside a collection by query
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		### update: dict
+			Dictionary containing update, following mongoDB rules
+		# Returns
+		------------
+		- int -> Modified count
+		"""
+		return cls.update (query, update, True, complete_response)
 
 	@classmethod
 	def delete(cls, query, many = False):
 		"""
-		Update document(s) inside a collection by query
+		Delete document(s) inside a collection by query
 		# Parameters
 		------------
 		### query: dict
@@ -597,6 +655,20 @@ class Schema(object):
 		"""
 		retval = methods.delete(cls.schema_name, query, many)
 		return retval
+
+	@classmethod
+	def delete_many(cls, query):
+		"""
+		Delete one document inside a collection by query
+		# Parameters
+		------------
+		### query: dict
+			Dictionary containing query
+		# Returns
+		------------
+		- int -> Modified count
+		"""
+		return cls.delete (query, True)
 
 	@classmethod
 	def parse(cls, dictionary):
