@@ -313,6 +313,7 @@ class Schema(object):
 		if "required" in scAux and scAux["required"]:
 			return json_obj is not None
 
+		retval = True
 		for k in scAux:
 			retval = True
 			if type(scAux[k]) is dict or type(scAux[k]) is list:
