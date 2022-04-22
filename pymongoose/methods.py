@@ -204,34 +204,92 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
 
                 wL, grouped_times = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".", grouped_times) 
 
-            ## If current isList is true
-            ## If len(parent) > 0 then current parent should be added in _id else _id = "$_id._id"
-                ## path: {"$push": "$parent.path"}
-                ## doc: {"$first": "$$ROOT"}
-                ## add $replaceRoot with $_id, parent: {"$mergeObjects": ["$doc", {"_id": "$_id"}, {"$parent": {"$mergeObjects": ["$parent", {"path": "$path"}]}}]}
+            """
+            If current isList is true:
+                If parent exists:
+                    Current parent should be added in _id 
+                    If last populate was a List, that means another group has already occured and _id data must be cleaned:
+                        So its neccessary to set as many _ids in loop so the last _id gets to the front of object
+                        _id = (_id. * grouped_times + n_parents)
+                else:
+                    _id = "$_id.(_id * grouped_times - 1)"
+                    path: {"$push": "$parent.path"}
+                    doc: {"$first": "$$ROOT"}
 
-            if isList: #Group and replace to have a correct object
+                add $replaceRoot with 
+                    $_id, 
+                    parent: {
+                        "$mergeObjects": [
+                            "$doc", {"_id": "$_id"}, 
+                            {
+                                "$parent": {
+                                    "$mergeObjects": ["$parent", {"path": "$path"}]
+                                }
+                            }
+                        ]
+                    }
+            """
+
+            # Group and replace to have a correct object
+            if isList: 
                 group = {}
                 _id = {}
-
+                
+                n_parents = 0
                 parentAux = parent
                 parentRoot = parentAux
-                if(parentAux.find(".") > 0):
+
+                # If parent has a dot, remove it and get the parentRoot (The first position)
+                if(parentAux.find(".") > 0): 
                     parentRoot = parentAux.split(".")[0]
 
                 if len(parent) > 0:
                     parentAux = parent[:-1]
+                    n_parents = len(parentAux.split ("."))
 
+                    id = "_id"
+
+                    if (wL):
+                        id = "_id." * (grouped_times + n_parents)
+                        id = id [:-1]
+                        grouped_times -= 1
+                    else:
+                        grouped_times += 1
+                        
+                
                     _id = {
-                        "_id": "$_id",
-                        parentRoot: f"${parentAux}._id"
+                        "_id": f"${id}",
+                        parentAux.replace (".", "_"): f"${parentAux}._id"
                     }
+                    
                 else: 
-                    id = "_id." * (grouped_times)
+                    id = "_id." * (grouped_times + 1)
 
                     id = id [:-1]
 
-                    _id = f"$_id.{id}" if wL else "$_id"
+                    _id = f"${id}"
+
+                # Group the path (The current populated item) in an array, if path has a dot, it means the populated item is inside an object
+                # Which doesn't care, so its required to take only the first name of the path.
+                """
+                    E.g.
+                    for the schema: 
+                        users: [
+                            {
+                                user_id: {
+                                    type: Types.ObjectId,
+                                    required: True,
+                                    ref: "users"
+                                },
+                                count: {
+                                    type: Types.Number,
+                                    required: True
+                                }
+                            }
+                        ]
+
+                    The path for populate would be /users.user_id/
+                """
 
                 popAux = pop["path"]
                 if popAux.find(".") > 0:
@@ -241,8 +299,14 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                 group[popAux] = {"$push": f"${parent}{popAux}"}
                 group["doc"] = {"$first": "$$ROOT"}
 
-                grouped_times += 1
+                # print (group)
 
+                # print (f"path: {pop['path']}")
+                # print (f"N_parents {n_parents}")
+                # print (f"Parent: {parentAux}")
+                # print (f"Was List: {wL}")
+                # print (f"Grouped times: {grouped_times}")
+                
                 aggregate.append({
                     "$group": group
                 })
