@@ -1,6 +1,7 @@
 from dataclasses import replace
 import sys
 from pymongo import DESCENDING, ASCENDING
+from pymongo.database import Database
 from bson.objectid import ObjectId
 from .mongo_types import *
 from pprint import pprint
@@ -11,7 +12,7 @@ schemas = {}
 debug_log = True
 database = None
 
-def set_schemas(db, schemas_re, _debug_log_=True):
+def set_schemas(db: Database, schemas_re: dict, _debug_log_=True):
     """
     ## Description:
     Function to be called were you control your models registration
@@ -20,7 +21,7 @@ def set_schemas(db, schemas_re, _debug_log_=True):
     - db: Database
     MongoDB connection database
     - schemas_re: dict
-    A dictionary with all your registerd schemas.
+    A dictionary with all your registered schemas.
     f.e: {"users": User.schema}
     - _debug_log_: bool
     A variable to set logs on or off
@@ -32,6 +33,38 @@ def set_schemas(db, schemas_re, _debug_log_=True):
     database = db
     schemas = schemas_re
     debug_log = _debug_log_
+    if debug_log:
+        Logger.set_terminal_color("blue")
+        print("MongoDB Schemas: ")
+        pprint(schemas)
+        Logger.set_terminal_color("reset")
+
+def set_schemas_from_list (db: Database, schemas_list: list, _debug_log_=True):
+    """
+    ## Description:
+    Function to be called were you control your models registration as list
+    # Parameters
+    ------------
+    - db: Database
+    MongoDB connection database
+    - schemas_re: list
+    A list with your schemas.
+    f.e: [User (empty=True)]
+        (User must be Schema subclass)
+    - _debug_log_: bool
+    A variable to set logs on or off
+    Default True
+    """
+    global database
+    global schemas
+    global debug_log
+    database = db
+    schemas = {}
+    debug_log = _debug_log_
+    for schema in schemas_list:
+        schema: Schema
+        schemas[schema.schema_name] = schema.schema
+
     if debug_log:
         Logger.set_terminal_color("blue")
         print("MongoDB Schemas: ")
