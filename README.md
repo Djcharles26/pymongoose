@@ -74,11 +74,19 @@ db.py:
         client = MongoClient(MONGO_URI)
         db = client.test
         try:
+            # Now schemas can be set in two ways
+            
+            #-> In a dict mode
             schemas = {
                 "roles": Role(empty=True).schema
             }
-
             set_schemas(db, schemas)
+
+            #-> Or in a list mode
+
+            set_schemas_from_list (db, [Role (empty=True)])
+
+
             print("MongoDB Connected!")
         except:
             traceback.print_exc()
@@ -115,6 +123,8 @@ This will return a cursor of elements, which can be parsed into User model for a
 ### Find one function:
 ```python
 user = User.find({}, one=True)
+# OR
+user = User.find_one ({})
 ```
 This will return a User element with fields obtained by database, if you prefer a json just add 
 ```python
