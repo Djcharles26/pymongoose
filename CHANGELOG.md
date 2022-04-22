@@ -1,2 +1,3 @@
 ## Methods
-- Fixed missing reference in validate required method
+- Fixed populate aggregation for multiple nesting objects
+- Added method to set schemas from list
