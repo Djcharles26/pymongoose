@@ -94,22 +94,28 @@ def exists(schema, query):
 def _get_clean_schema(schema, pop):
     isList = False
     aux_schema = schema.copy()
-    if pop.find(".") > 0:
-        populate_list = pop.replace(" ", "").split(".")
+    pop_list = None
+    if pop.find(".") > 0: # If the populate path is a child of another object
+        populate_list = pop.replace(" ", "").split(".") ## Split The populate items from pop. g.e user.permissions -> user, permissions
         for pop1 in populate_list:
-            if type(aux_schema) is list: 
+            if type(aux_schema) is list: # If current schema is list. g.e presets: [{type: Types.ObjectId, default: None}]
                 isList = True
                 aux_schema = aux_schema[0]
+
+                if (not pop_list):
+                    pop_list = pop1 # Save that this current schema is a list
 
             aux_schema = aux_schema[pop1]
     else:
         aux_schema = aux_schema[pop]
+        if type(aux_schema) is list:
+            isList = True
+            aux_schema = aux_schema [0]
+            
+            if (not pop_list):
+                pop_list = pop
 
-    if type(aux_schema) is list:
-        isList = True
-        aux_schema = aux_schema[0]
-
-    return aux_schema, isList
+    return aux_schema, isList, pop_list
 
 def _merge_objects(parentRoot, parentAux, acum, popAux):
     if(len(parentAux) > 0):
@@ -124,11 +130,18 @@ def _merge_objects(parentRoot, parentAux, acum, popAux):
     else:
         return {popAux: f"${popAux}"}
 
-def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
+def _populate(schema, populate, aggregate: list, parent=""):
     wasList = False
     for pop in populate: #Iterate in each populate object or str
         if type(pop) is not dict: #If is a str is a simple lookup and unwind
-            aux_schema, isList = _get_clean_schema(schema, pop)
+            aux_schema, isList, pop_list = _get_clean_schema(schema, pop)
+            if ("." in pop):
+                unwind = {
+                    "path": f"${parent + pop_list}",
+                    "preserveNullAndEmptyArrays": True
+                }
+                aggregate.append({"$unwind": unwind})
+
             e = {
                 "$lookup": {
                     "from": aux_schema["ref"],
@@ -145,9 +158,9 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                     "preserveNullAndEmptyArrays": True
                 }
                 aggregate.append({"$unwind": unwind})
-            
+
         else: 
-            aux_schema, isList = _get_clean_schema(schema, pop["path"])
+            aux_schema, isList, pop_list = _get_clean_schema(schema, pop["path"])
             
             if isList:  #If is list first unwind path dessired
                 aggregate.append(
@@ -159,7 +172,7 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                     }
                 )
                 wasList = True
-            ##Add respective pipeline with select and match
+            ## Add respective pipeline with select and match
             pipeline = [
                 {
                     "$match": {
@@ -200,19 +213,16 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
 
             if "options" in pop: #If has attached populates
                 
-                ##Recursively call to function with respectie schema 
+                ##Recursively call to function with respective schema 
 
-                wL, grouped_times = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".", grouped_times) 
+                wL = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".") 
 
             """
             If current isList is true:
                 If parent exists:
                     Current parent should be added in _id 
-                    If last populate was a List, that means another group has already occured and _id data must be cleaned:
-                        So its neccessary to set as many _ids in loop so the last _id gets to the front of object
-                        _id = (_id. * grouped_times + n_parents)
                 else:
-                    _id = "$_id.(_id * grouped_times - 1)"
+                    _id = "$_id"
                     path: {"$push": "$parent.path"}
                     doc: {"$first": "$$ROOT"}
 
@@ -220,7 +230,7 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                     $_id, 
                     parent: {
                         "$mergeObjects": [
-                            "$doc", {"_id": "$_id"}, 
+                            "$doc", {"_id": "$_id._id"}, to obtain real _id 
                             {
                                 "$parent": {
                                     "$mergeObjects": ["$parent", {"path": "$path"}]
@@ -235,7 +245,6 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                 group = {}
                 _id = {}
                 
-                n_parents = 0
                 parentAux = parent
                 parentRoot = parentAux
 
@@ -245,29 +254,15 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
 
                 if len(parent) > 0:
                     parentAux = parent[:-1]
-                    n_parents = len(parentAux.split ("."))
 
-                    id = "_id"
-
-                    if (wL):
-                        id = "_id." * (grouped_times + n_parents)
-                        id = id [:-1]
-                        grouped_times -= 1
-                    else:
-                        grouped_times += 1
-                        
-                
                     _id = {
-                        "_id": f"${id}",
+                        "_id": f"$_id",
                         parentAux.replace (".", "_"): f"${parentAux}._id"
                     }
                     
                 else: 
-                    id = "_id." * (grouped_times + 1)
 
-                    id = id [:-1]
-
-                    _id = f"${id}"
+                    _id = f"$_id"
 
                 # Group the path (The current populated item) in an array, if path has a dot, it means the populated item is inside an object
                 # Which doesn't care, so its required to take only the first name of the path.
@@ -305,7 +300,6 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                 # print (f"N_parents {n_parents}")
                 # print (f"Parent: {parentAux}")
                 # print (f"Was List: {wL}")
-                # print (f"Grouped times: {grouped_times}")
                 
                 aggregate.append({
                     "$group": group
@@ -317,7 +311,7 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                     replaceRoot = {
                         "$mergeObjects": [
                             "$doc",
-                            {"_id": "$_id"},
+                            {"_id": f"$_id._id"},
                             _merge_objects(parentRoot, parentAux.split("."), parentRoot, popAux)
                         ]
                     }
@@ -325,7 +319,7 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                     replaceRoot = {
                         "$mergeObjects": [
                             "$doc",
-                            {"_id": "$_id"},
+                            {"_id": "$_id._id"},
                             
                             {popAux: f"${popAux}"}
                             
@@ -337,7 +331,7 @@ def _populate(schema, populate, aggregate: list, parent="", grouped_times = 0):
                 })
                 
 
-    return wasList, grouped_times
+    return wasList
 
 def _convert_id_to_object_id(id) -> ObjectId:
     if type(id) is not ObjectId:
@@ -443,6 +437,8 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
                     "$limit": limit
                 })
 
+            if debug_log:
+                Logger.printLog (aggregate)
 
             retval = database[schema_name].aggregate(aggregate)
 
@@ -528,7 +524,7 @@ def update(schema, query, update, many = False, complete_response = False):
     - Number of documents updated
 	"""
     try:
-        if "_id" in query:
+        if type(query.get ("_id")) is str:
             query["_id"] = _convert_id_to_object_id(query["_id"])
 
         if not many:
