@@ -21,6 +21,19 @@ class Types(Enum):
 	ObjectId    = 4
 	Boolean     = 5
 
+
+def type_name (type: Types):
+	if (type == Types.String):
+		return "String"
+	elif (type == Types.Number):
+		return "Number"
+	elif (type == Types.Date):
+		return "Date"
+	elif (type == Types.ObjectId):
+		return "ObjectId"
+	elif (type == Types.Boolean):
+		return "Boolean"
+
 class MongoError(Enum):
 	"""
 	Mongo error Enum used in mongo exception
@@ -206,36 +219,27 @@ class Schema(object):
 				Logger.printLog(f"key {key} doesn't come in json, returning True")
 			return True
 
+		retval = False
+
 		if type == Types.Number:
-			if item_type is int or item_type is float:
-				return True
-			else:
-				Logger.printError(f"key {key} has an incorrect type") 
-				return False
+			retval = item_type is int or item_type is float
+
 		elif type == Types.String:
-			if item_type is str:
-				return True
-			else:
-				Logger.printError(f"key {key} has an incorrect type") 
-				return False
+			retval = item_type is str
+
 		elif type == Types.Date:
-			if "datetime.datetime" in str(item_type):
-				return True
-			else:
-				Logger.printError(f"key {key} has an incorrect type") 
-				return False
+			retval = "datetime.datetime" in str(item_type)
+		
 		elif type == Types.ObjectId:
-			if item_type is ObjectId:
-				return True
-			else:
-				Logger.printError(f"key {key} has an incorrect type") 
-				return False
+			retval = item_type is ObjectId 
+			
 		elif type == Types.Boolean:
-			if item_type is bool:
-				return True
-			else:
-				Logger.printError(f"key {key} has an incorrect type")
-				return False
+			retval = item_type is bool
+		
+		if (not retval):
+			Logger.printError(f"key {key} has an incorrect type: {item_type}, but should be {type_name (type)}") 
+		
+		return retval
 
 	def _validate_type_cycle(self, scAux, json_obj, last_key):
 
@@ -276,7 +280,7 @@ class Schema(object):
 					return retval
 				
 				if methods.debug_log:
-					Logger.printSuccess(f"(ty!pe) key={k} in schema has a correct value type")
+					Logger.printSuccess(f"(type) key={k} in schema has a correct value type")
 			else:
 				if methods.debug_log:
 					Logger.printWarn(f"(type) key={k} schema is not a dict, returning True")
