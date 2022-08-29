@@ -1,5 +1,5 @@
-PYMONGOOSE_VERSION = "1.3.3"
-PYMONGOOSE_VERSION_NAME = "Version 1.3.3"
+PYMONGOOSE_VERSION = "1.3.4"
+PYMONGOOSE_VERSION_NAME = "Version 1.3.4"
 PYMONGOOSE_VERSION_AUTHOR = "Juan Carlos Lara"
 
 def pymongoose_version_print_full():
