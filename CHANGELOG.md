@@ -1,3 +1,2 @@
 ## Methods
-- Fixed how multiple aggregations are made
-- Added type error print when failing type check
+- Fixed how all parents are grouped when joining children in populate
