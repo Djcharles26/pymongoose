@@ -249,17 +249,31 @@ def _populate(schema, populate, aggregate: list, parent=""):
                 parentRoot = parentAux
 
                 # If parent has a dot, remove it and get the parentRoot (The first position)
-                if(parentAux.find(".") > 0): 
-                    parentRoot = parentAux.split(".")[0]
+                if(parent.find(".") > 0): 
+                    parentRoot = parent.split(".")[0]
 
+                # If parent is not empty it means is required to add in _id each parent participant
                 if len(parent) > 0:
                     parentAux = parent[:-1]
 
                     _id = {
                         "_id": f"$_id",
-                        parentAux.replace (".", "_"): f"${parentAux}._id"
                     }
-                    
+
+                    # Generate a list of parents splitted by .
+                    parents_list = parentAux.split (".")
+
+                    # Lambda to generate the correct format
+                    # For key its required to be with _ and for _id value is required a .
+                    #e.g
+                    # 'components': "$components._id",
+                    # 'components_children': '$components.children._id'
+                    formatted_parent = lambda c, limit: f"{c}".join (parents_list [0:limit + 1])
+
+                    for i, _ in enumerate(parents_list):
+                        idd = "$" + formatted_parent ('.', i) + "._id"
+                        _id [formatted_parent ('_', i)] = idd
+
                 else: 
 
                     _id = f"$_id"
