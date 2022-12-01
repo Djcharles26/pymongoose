@@ -446,7 +446,7 @@ class Schema(object):
 	@classmethod
 	def find(
 		cls, query, select = None, populate=None, one=False, 
-		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT
+		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT, no_cursor_timeout=False
 	):
 		"""
 		Find a document inside a collection
@@ -481,6 +481,7 @@ class Schema(object):
 			- IF AS_STRING(2), will return a parsed list of dicts as str if one == False, else as a str parsed serializable dict
 			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
 			defaults to: AS_DEFAULT (0)
+		### no_cursor_timeout: bool
 		# Returns
 		------------
 		- Cursor -> one == False, populate == None
@@ -493,7 +494,7 @@ class Schema(object):
 		"""
 		if methods.debug_log:
 			Logger.printLog(cls.schema_name)
-		retval = methods.find(cls.schema_name, query, select, populate, one, skip, limit, sort)
+		retval = methods.find(cls.schema_name, query, select, populate, one, skip, limit, sort, no_cursor_timeout=no_cursor_timeout)
 		if one and parse:
 			retval = cls.parse(retval) if retval is not None else retval
 		elif cursor == AS_DICT:
@@ -505,7 +506,7 @@ class Schema(object):
 
 	@classmethod
 	def find_one (cls, query, select = None, populate=None, 
-		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT
+		skip = 0, limit=None, sort=None, parse=True, cursor=AS_DEFAULT, no_cursor_timeout=False
 	):
 		"""
 		Find one document inside a collection
@@ -537,6 +538,7 @@ class Schema(object):
 			- IF AS_STRING(2), will return a parsed list of dicts as str if one == False, else as a str parsed serializable dict
 			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
 			defaults to: AS_DEFAULT (0)
+		### no_cursor_timeout: bool
 		# Returns
 		------------
 		- Cursor -> one == False, populate == None
@@ -547,10 +549,10 @@ class Schema(object):
 		- str -> cursor == AS_STRING, one == False
 		- None -> not found
 		"""
-		return cls.find (query, select, populate, True, skip, limit, sort, parse, cursor)
+		return cls.find (query, select, populate, True, skip, limit, sort, parse, cursor, no_cursor_timeout=no_cursor_timeout)
 
 	@classmethod
-	def find_by_id(cls, id, select = None, populate=None, parse=True, cursor=AS_DEFAULT):
+	def find_by_id(cls, id, select = None, populate=None, parse=True, cursor=AS_DEFAULT, no_cursor_timeout=False):
 		"""
 		Find a document inside a collection by id
 		# Parameters
@@ -572,12 +574,13 @@ class Schema(object):
 			- IF AS_STRING(2), will return a str parsed serializable dict
 			*Note: In case you don't need a serializable dict, left cursor AS_DEFAULT
 			defaults to: AS_DEFAULT (0)
+		### no_cursor_timeout: bool
 		# Returns
 		------------
 		- dict -> parse = False
 		- Schema object -> parse = True 
 		"""
-		retval = methods.find_by_id(cls.schema_name, id, select, populate)
+		retval = methods.find_by_id(cls.schema_name, id, select, populate, no_cursor_timeout)
 
 		if parse:
 			retval = cls.parse(retval) if retval is not None else retval

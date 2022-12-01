@@ -2,6 +2,7 @@ from dataclasses import replace
 import sys
 from pymongo import DESCENDING, ASCENDING
 from pymongo.database import Database
+from pymongo.collection import Collection
 from bson.objectid import ObjectId
 from .mongo_types import *
 from pprint import pprint
@@ -363,7 +364,7 @@ def count_documents(schema: str, query: dict) -> int:
 
     return retval
 
-def find(schema: str, query: dict, select = {}, populate=None, one=False, skip = 0, limit=None, sort=None):
+def find(schema: str, query: dict, select = {}, populate=None, one=False, skip = 0, limit=None, sort=None, no_cursor_timeout=False):
     global schemas
     schema_name = schema
     """
@@ -392,6 +393,7 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
     ### sort: dict
         Dictionary to set an order of documents based on a field
         defaults to: None
+    ### no_cursor_timeout: bool
     # Returns
     ------------
     - cursor if one is False else dict
@@ -410,18 +412,18 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
         retval = {}
         if populate is None:
             if one:
-                retval = database[schema_name].find_one(query, select)
+                retval = database[schema_name].find_one(query, select, no_cursor_timeout=no_cursor_timeout)
             else:
                 if sort is not None:
                     if limit is None:
-                        retval = database[schema_name].find(query, select).skip(skip).sort(sort_key, sort_value)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip).sort(sort_key, sort_value)
                     else:
-                        retval = database[schema_name].find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip).limit(limit).sort(sort_key, sort_value)
                 else:
                     if limit is None:
-                        retval = database[schema_name].find(query, select).skip(skip)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip)
                     else:
-                        retval = database[schema_name].find(query, select).skip(skip).limit(limit)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip).limit(limit)
         else:
             aggregate = [
                 {"$match" : query}
@@ -470,7 +472,7 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
     except:
         raise MongoException(message="Error finding document(s)", mongoError=MongoError.Bad_action, bt=sys.exc_info())
 
-def find_by_id(schema, id, select = {}, populate=None):
+def find_by_id(schema, id, select = {}, populate=None, no_cursor_timeout=False):
     """
 	Find a document inside a collection by _id
     (Same as find({_id:id}))
@@ -486,6 +488,7 @@ def find_by_id(schema, id, select = {}, populate=None):
     ### populate: dict
         Dictionary containing lookup structure of the fields required to populate
         defaults to: None
+    ### no_cursor_timeout: bool
     # Returns
     ------------
     - dict
