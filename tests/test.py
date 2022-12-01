@@ -1,5 +1,4 @@
 import os, traceback
-import signal 
 from pymongo import MongoClient
 from pymongoose.methods import set_schemas, get_cursor_length
 from pymongoose.methods import AS_DICT, AS_STRING
@@ -140,27 +139,31 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
-def test_find_no_timeout ():
-    mongo_init()
-    try:
-        users = User.find({}, no_cursor_timeout=True)
-        users_len = 0
+# def test_find_no_timeout ():
+#     mongo_init()
+#     try:
+#         users = User.find({}, no_cursor_timeout=True)
+#         users_len = 0
 
-        for user in users:
-            users_len += 1
+#         users: Cursor
 
-        users.close ()
+#         for user in users:
+#             users_len += 1
+
+#         users.close ()
+
+#         print ("Closed??")
         
-        if users is None or users_len == 0:
-            return 1
+#         if users is None or users_len == 0:
+#             return 1
 
-        print("Find exit with code 0")
-        return 0
+#         print("Find exit with code 0")
+#         return 0
 
-    except:
-        traceback.print_exc()
-        raise Exception("Error initializing database")
-        return 1
+#     except:
+#         traceback.print_exc()
+#         raise Exception("Error initializing database")
+#         return 1
 
 def test_find_dict():
     mongo_init()
@@ -493,6 +496,7 @@ def test_delete_many():
 
 # test_insert()
 # test_find()
+# test_find_no_timeout ()
 # test_find_dict()
 # test_find_string()
 # test_find_sort()
