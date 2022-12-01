@@ -416,9 +416,9 @@ def find(schema: str, query: dict, select = {}, populate=None, one=False, skip =
             else:
                 if sort is not None:
                     if limit is None:
-                        retval = database[schema_name].find(query, select).skip(skip).sort(sort_key, sort_value, no_cursor_timeout=no_cursor_timeout)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip).sort(sort_key, sort_value)
                     else:
-                        retval = database[schema_name].find(query, select).skip(skip).limit(limit).sort(sort_key, sort_value, no_cursor_timeout=no_cursor_timeout)
+                        retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip).limit(limit).sort(sort_key, sort_value)
                 else:
                     if limit is None:
                         retval = database[schema_name].find(query, select, no_cursor_timeout=no_cursor_timeout).skip(skip)
