@@ -140,6 +140,28 @@ def test_find():
         raise Exception("Error initializing database")
         return 1
 
+def test_find_no_timeout ():
+    mongo_init()
+    try:
+        users = User.find({}, no_cursor_timeout=True)
+        users_len = 0
+
+        for user in users:
+            users_len += 1
+
+        users.close ()
+        
+        if users is None or users_len == 0:
+            return 1
+
+        print("Find exit with code 0")
+        return 0
+
+    except:
+        traceback.print_exc()
+        raise Exception("Error initializing database")
+        return 1
+
 def test_find_dict():
     mongo_init()
     try:
