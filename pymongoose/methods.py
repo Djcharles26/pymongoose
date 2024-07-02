@@ -190,165 +190,175 @@ def _populate(schema, populate, aggregate: list, parent=""):
                 
                 pipeline.append({"$project": project})
 
-            e = {
-                "$lookup": {
-                    "from": aux_schema["ref"],
-                    "let": {f"var": f"${parent + pop['path']}"},
-                    "pipeline": pipeline,
-                    "as": parent + pop["path"]
+            ## This means two things, The first is that the current path is a dict and contains values to be populated
+            ## Or, the schema is not correct
+            if ("ref" not in aux_schema):
+                if ("options" in pop):
+                    _populate (aux_schema, pop["options"], aggregate, pop["path"] + ".")
+                else:
+                    raise MongoException(
+                        message=f"Schema {pop['path']} is not correct, Missing 'ref'"
+                    )
+            else:
+                e = {
+                    "$lookup": {
+                        "from": aux_schema["ref"],
+                        "let": {f"var": f"${parent + pop['path']}"},
+                        "pipeline": pipeline,
+                        "as": parent + pop["path"]
+                    }
                 }
-            }
 
-            aggregate.append(e)
-            #Unwind result
-            unwind = {
-                "path": f"${parent + pop['path']}",
-                "preserveNullAndEmptyArrays": True
-            }
-            aggregate.append({"$unwind": unwind})
+                aggregate.append(e)
+                #Unwind result
+                unwind = {
+                    "path": f"${parent + pop['path']}",
+                    "preserveNullAndEmptyArrays": True
+                }
+                aggregate.append({"$unwind": unwind})
 
-            if "match" in pop:
-                aggregate.append({"$match": {f"{parent}{pop['path']}.{k}": v for k, v in pop["match"].items()}})
+                if "match" in pop:
+                    aggregate.append({"$match": {f"{parent}{pop['path']}.{k}": v for k, v in pop["match"].items()}})
 
-            wL = False
+                wL = False
 
-            if "options" in pop: #If has attached populates
-                
-                ##Recursively call to function with respective schema 
+                if "options" in pop: #If has attached populates
+                    
+                    ##Recursively call to function with respective schema 
 
-                wL = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".") 
+                    wL = _populate(schemas[aux_schema["ref"]], pop["options"], aggregate, parent + pop["path"] + ".") 
 
-            """
-            If current isList is true:
-                If parent exists:
-                    Current parent should be added in _id 
-                else:
-                    _id = "$_id"
-                    path: {"$push": "$parent.path"}
-                    doc: {"$first": "$$ROOT"}
-
-                add $replaceRoot with 
-                    $_id, 
-                    parent: {
-                        "$mergeObjects": [
-                            "$doc", {"_id": "$_id._id"}, to obtain real _id 
-                            {
-                                "$parent": {
-                                    "$mergeObjects": ["$parent", {"path": "$path"}]
-                                }
-                            }
-                        ]
-                    }
-            """
-
-            # Group and replace to have a correct object
-            if isList: 
-                group = {}
-                _id = {}
-                
-                parentAux = parent
-                parentRoot = parentAux
-
-                # If parent has a dot, remove it and get the parentRoot (The first position)
-                if(parent.find(".") > 0): 
-                    parentRoot = parent.split(".")[0]
-
-                # If parent is not empty it means is required to add in _id each parent participant
-                if len(parent) > 0:
-                    parentAux = parent[:-1]
-
-                    _id = {
-                        "_id": f"$_id",
-                    }
-
-                    # Generate a list of parents splitted by .
-                    parents_list = parentAux.split (".")
-
-                    # Lambda to generate the correct format
-                    # For key its required to be with _ and for _id value is required a .
-                    #e.g
-                    # 'components': "$components._id",
-                    # 'components_children': '$components.children._id'
-                    formatted_parent = lambda c, limit: f"{c}".join (parents_list [0:limit + 1])
-
-                    for i, _ in enumerate(parents_list):
-                        idd = "$" + formatted_parent ('.', i) + "._id"
-                        _id [formatted_parent ('_', i)] = idd
-
-                else: 
-
-                    _id = f"$_id"
-
-                # Group the path (The current populated item) in an array, if path has a dot, it means the populated item is inside an object
-                # Which doesn't care, so its required to take only the first name of the path.
                 """
-                    E.g.
-                    for the schema: 
-                        users: [
-                            {
-                                user_id: {
-                                    type: Types.ObjectId,
-                                    required: True,
-                                    ref: "users"
-                                },
-                                count: {
-                                    type: Types.Number,
-                                    required: True
-                                }
-                            }
-                        ]
+                If current isList is true:
+                    If parent exists:
+                        Current parent should be added in _id 
+                    else:
+                        _id = "$_id"
+                        path: {"$push": "$parent.path"}
+                        doc: {"$first": "$$ROOT"}
 
-                    The path for populate would be /users.user_id/
+                    add $replaceRoot with 
+                        $_id, 
+                        parent: {
+                            "$mergeObjects": [
+                                "$doc", {"_id": "$_id._id"}, to obtain real _id 
+                                {
+                                    "$parent": {
+                                        "$mergeObjects": ["$parent", {"path": "$path"}]
+                                    }
+                                }
+                            ]
+                        }
                 """
 
-                popAux = pop["path"]
-                if popAux.find(".") > 0:
-                    popAux = popAux.split(".")[0]
+                # Group and replace to have a correct object
+                if isList: 
+                    group = {}
+                    _id = {}
+                    
+                    parentAux = parent
+                    parentRoot = parentAux
 
-                group["_id"] = _id
-                group[popAux] = {"$push": f"${parent}{popAux}"}
-                group["doc"] = {"$first": "$$ROOT"}
+                    # If parent has a dot, remove it and get the parentRoot (The first position)
+                    if(parent.find(".") > 0): 
+                        parentRoot = parent.split(".")[0]
 
-                # print (group)
+                    # If parent is not empty it means is required to add in _id each parent participant
+                    if len(parent) > 0:
+                        parentAux = parent[:-1]
 
-                # print (f"path: {pop['path']}")
-                # print (f"N_parents {n_parents}")
-                # print (f"Parent: {parentAux}")
-                # print (f"Was List: {wL}")
-                
-                aggregate.append({
-                    "$group": group
-                })
+                        _id = {
+                            "_id": f"$_id",
+                        }
 
-                replaceRoot = {}
-                
-                if len(parent) > 0:
-                    replaceRoot = {
-                        "$mergeObjects": [
-                            "$doc",
-                            {"_id": f"$_id._id"},
-                            _merge_objects(parentRoot, parentAux.split("."), parentRoot, popAux)
-                        ]
-                    }
-                else:
-                    replaceRoot = {
-                        "$mergeObjects": [
-                            "$doc",
-                            {"_id": "$_id._id"},
-                            
-                            {popAux: f"${popAux}"}
-                            
-                        ]
-                    }
-                
-                aggregate.append({
-                    "$replaceRoot": {"newRoot": replaceRoot}
-                })
-                
+                        # Generate a list of parents splitted by .
+                        parents_list = parentAux.split (".")
+
+                        # Lambda to generate the correct format
+                        # For key its required to be with _ and for _id value is required a .
+                        #e.g
+                        # 'components': "$components._id",
+                        # 'components_children': '$components.children._id'
+                        formatted_parent = lambda c, limit: f"{c}".join (parents_list [0:limit + 1])
+
+                        for i, _ in enumerate(parents_list):
+                            idd = "$" + formatted_parent ('.', i) + "._id"
+                            _id [formatted_parent ('_', i)] = idd
+
+                    else: 
+
+                        _id = f"$_id"
+
+                    # Group the path (The current populated item) in an array, if path has a dot, it means the populated item is inside an object
+                    # Which doesn't care, so its required to take only the first name of the path.
+                    """
+                        E.g.
+                        for the schema: 
+                            users: [
+                                {
+                                    user_id: {
+                                        type: Types.ObjectId,
+                                        required: True,
+                                        ref: "users"
+                                    },
+                                    count: {
+                                        type: Types.Number,
+                                        required: True
+                                    }
+                                }
+                            ]
+
+                        The path for populate would be /users.user_id/
+                    """
+
+                    popAux = pop["path"]
+                    if popAux.find(".") > 0:
+                        popAux = popAux.split(".")[0]
+
+                    group["_id"] = _id
+                    group[popAux] = {"$push": f"${parent}{popAux}"}
+                    group["doc"] = {"$first": "$$ROOT"}
+
+                    # print (group)
+
+                    # print (f"path: {pop['path']}")
+                    # print (f"N_parents {n_parents}")
+                    # print (f"Parent: {parentAux}")
+                    # print (f"Was List: {wL}")
+                    
+                    aggregate.append({
+                        "$group": group
+                    })
+
+                    replaceRoot = {}
+                    
+                    if len(parent) > 0:
+                        replaceRoot = {
+                            "$mergeObjects": [
+                                "$doc",
+                                {"_id": f"$_id._id"},
+                                _merge_objects(parentRoot, parentAux.split("."), parentRoot, popAux)
+                            ]
+                        }
+                    else:
+                        replaceRoot = {
+                            "$mergeObjects": [
+                                "$doc",
+                                {"_id": "$_id._id"},
+                                
+                                {popAux: f"${popAux}"}
+                                
+                            ]
+                        }
+                    
+                    aggregate.append({
+                        "$replaceRoot": {"newRoot": replaceRoot}
+                    })
+                    
 
     return wasList
 
-def _convert_id_to_object_id(id) -> ObjectId:
+def _convert_id_to_object_id(id) -> ObjectId:#
     if type(id) is not ObjectId:
         id = ObjectId(id)
     return id
