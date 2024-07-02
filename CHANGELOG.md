@@ -1,2 +1,2 @@
 ## Methods
-- Added no_cursor_timeout option in find methods
+- Updated how populate works with dictionaries
